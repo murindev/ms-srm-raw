@@ -1,0 +1,351 @@
+<template>
+    <div style="user-select: none">
+         <Row :space="10" >
+             <Cell width="10">
+                 <TreePicker v-if="h.roles_obj" :option="{keyName: 'id', titleName: 'name', dataMode: 'list', datas:rolesCategory}" multiple v-model="role" />
+             </Cell>
+             <Cell width="5">
+                 <DateFullRangePicker
+                         v-model="period"
+                         :layout="['year', 'quarter', 'month', 'week', 'date', 'customize']"
+                         :startWeek="1"
+                         @change="fetchCrewByImplement"
+                         @confirm="fetchCrewByImplement"
+                 />
+             </Cell>
+          </Row>
+        <div class="state-list">
+            <span v-for="state in stafferStateList" :style="{background:state.color}">{{state.title}}</span>
+        </div>
+
+        <table class="table crew-tbl">
+
+            <thead>
+            <tr>
+                <th>Сотрудник:</th>
+                <th>Должность:</th>
+<!--                <th>Смена:</th>
+                <th>График:</th>-->
+                <th>Оклад:</th>
+                <th style="width: 20px;">
+                    <div class="flex" style="max-width: 842px;">
+<!--                        Календарь:-->
+                        <fieldset>
+                            <Checkbox v-tooltip theme="white" :content="'Выработка в часах'" placement="bottom" v-model="withHours">Часы</Checkbox>
+                            <Checkbox v-tooltip theme="white" :content="'Заработанные проценты'" placement="bottom" v-model="withPercents">%</Checkbox>
+                            <Checkbox v-tooltip theme="white" :content="'Выработка по окладу'" placement="bottom" v-model="withRate">Оклад</Checkbox>
+                        </fieldset>
+                    </div>
+
+                </th>
+                <th colspan="2" v-tooltip theme="white" :content="'Количество отработанных часов'">Часов:</th>
+                <th colspan="2" v-tooltip theme="white" :content="'Количество отработанных дней'">Дней:</th>
+                <th v-tooltip theme="white" :content="'Удержания'">Уд-я:</th>
+                <th>Комментарии:</th>
+            </tr>
+
+            </thead>
+
+            <tbody>
+<!--SUB HEADER-->
+            <tr>
+                <td/>
+                <td/>
+<!--                <td v-tooltip theme="white" :content="'Дневная или ночная смена'">
+                    <span>д</span> / <span class="highlighted">н</span>
+                </td>
+                <td v-tooltip theme="white" :content="'Пятидневка или шестидневка'">
+                    <span>5</span> / <span class="highlighted">6</span>
+                </td>-->
+                <td/>
+                <td :rowspan="Object.keys(users()).length + 2" >
+                    <div class="calendar-wrapper">
+                        <div class="calendar-tbl">
+                            <div class="calendar-col"
+                                 v-for="day in between(period.start,period.end)"
+                                 :class="{'weekends':showDate(day).format('ddd') === 'вс' || showDate(day).format('ddd') === 'сб'}"
+                            >
+                                <div class="calendar-col_cell" >
+                                    <div class="calendar-col_top">
+                                        {{showDate(day).format('DD')}}
+                                    </div>
+                                    <div class="calendar-col_bottom">
+                                        {{showDate(day).format('ddd')}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="calendar-tbl" v-for="user in users()">
+                            <div class="calendar-col"
+                                 v-for="day in between(period.start,period.end)"
+                                 :class="{'weekends':showDate(day).format('ddd') === 'вс' || showDate(day).format('ddd') === 'сб'}"
+                                 :style="highlight(showDate(day).format('YYYY-MM-DD'),user),stateStyle(showDate(day).format('YYYY-MM-DD'),user.id)"
+                                 @click="openMemberModal(showDate(day).format('YYYY-MM-DD'),user)"
+                                 @mouseenter="highlightOn(showDate(day).format('YYYY-MM-DD'),user)"
+                                 @mouseleave="highlightOff()"
+                            >
+                                <span class="start"/>
+                                <div class="calendar-col_day">
+                                    <div class="calendar-col_top" v-if="withHours && dayByStaffers">
+                                        {{dayByStaffers[showDate(day).format('YYYY-MM-DD')][user.id].hours}}
+                                    </div>
+                                    <div class="calendar-col_down"
+                                         v-if="!withPercents && withRate"
+                                         v-html="dayByStaffers[showDate(day).format('YYYY-MM-DD')][user.id].rate"
+                                    ></div>
+                                    <div class="calendar-col_down" v-if="withRate && !withRate" v-html="stafferDayRate(showDate(day).format('YYYY-MM-DD'),user)"></div>
+                                    <div class="calendar-col_down" v-if="withPercents && withRate" v-html="stafferDayRate(showDate(day).format('YYYY-MM-DD'),user)"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="calendar-tbl">
+                            <div class="calendar-col"
+                                 v-for="day in between(period.start,period.end)"
+                                 :class="{'weekends':showDate(day).format('ddd') === 'вс' || showDate(day).format('ddd') === 'сб'}"
+                            >
+                                <div class="calendar-col_cell" >
+<!--                                    <div class="calendar-col_top">
+1
+                                    </div>
+                                    <div class="calendar-col_bottom">
+                                       1
+                                    </div>-->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+                <td v-tooltip theme="white" :content="'План'">П</td>
+                <td v-tooltip theme="white" :content="'Факт'">Ф</td>
+                <td v-tooltip theme="white" :content="'План'">П</td>
+                <td v-tooltip theme="white" :content="'Факт'">Ф</td>
+            </tr>
+<!--TABLE CONTENT-->
+            <tr v-for="(user,userKey) in users()">
+
+                <td class="no-wrap"  :style="highlight('',user)">{{user.name}}</td>
+                <td>{{h.roles_obj[user.role_id].name}}</td>
+<!--                <td><h-switch v-model="user.shift" :small="true"/></td>
+                <td><h-switch v-model="user.shift" :small="true"/></td>-->
+                <td>{{thousands(user.salary)}}</td>
+                <td>21</td>
+                <td>21</td>
+                <td>{{user.timeline}}</td>
+                <td>4</td>
+                <td class="no-wrap">13 285</td>
+                <td>здесь будет комментарий</td>
+
+            </tr>
+            <tr>
+                <td/>
+                <td/>
+                <td/>
+                <td/>
+
+                <td/>
+                <td/>
+                <td/>
+                <td/>
+            </tr>
+            </tbody>
+
+        </table>
+
+        <staffer-modal/>
+
+
+
+    </div>
+</template>
+
+<script>
+
+    import {mapState, mapMutations, mapActions, mapGetters} from 'vuex';
+    import {bus} from "../bus";
+    import moment from 'moment';
+    moment.locale('ru');
+    require('moment-weekday-calc');
+
+    import dayPayment from '../modules/crew/dayPayment'
+
+
+    console.log(moment().isoWeekdayCalc([2015,0,1],[2015,5,30],[1,2,3,4,5]));
+
+    import StafferModal from "../Components/Crew/StafferModal"
+
+
+    export default {
+        name: "CrewList",
+        data(){
+            return {
+                role: [1,2,3,4,5,6,7,8,9],
+                now: new Date,
+                startWeek: 1,
+                layout: ['year', 'quarter', 'month', 'week', 'date', 'customize'],
+                // table decoration
+                horizontal: null,
+                vertical: null,
+                // view types
+                withHours: false,
+                withPercents: false,
+                withRate: false,
+                withPercentsAndRate: false,
+                // MODAL
+                userModal:false,
+
+
+                crewMember: {}
+
+            }
+        },
+        components:{
+            StafferModal
+        },
+        computed:{
+            period:{
+                get(){return this.$store.getters.crewPeriod;},
+                set(value){this.$store.commit('CREW_PERIOD',value);}
+            },
+            ...mapGetters(['crew','h','daysInMonth','crewScheduling','staffer','stafferStateList','crewPeriodArr','dayByStaffers']),
+            // ...mapMutations(['STAFFER'])
+        },
+        methods: {
+            ...mapActions(['crewCreate','crewUpdate','fetchCrewByImplement']),
+            test(v){
+                return dayPayment(v);
+            },
+            // ******
+            workingDaysInMonth(date,timeline){
+                let start = moment(date).startOf('month').format("YYYY-MM-DD");
+                let end = moment(date).endOf('month').format("YYYY-MM-DD");
+                let arTimeline = Array.from({length: timeline}, (v, k) => k+1);
+                return moment().isoWeekdayCalc(start,end,arTimeline);
+            },
+            stafferDayRate(date,staffer){
+                let rate = staffer.salary / this.workingDaysInMonth(date,staffer.timeline);
+                return Math.floor(rate);
+            },
+/*            staffersDays(date,staffer){
+
+            },
+            dayByStaffers(date,staffer){ // |
+
+            },*/
+            stafferByDays(){ // --
+                let arr = {}, users = this.h.users;
+
+                for (let day of this.crewPeriodArr){
+                    for(let u in users) if(users[u].active){
+                        let user = users[u];
+                        arr[day][user.id] = {
+                            name: user.name
+                        }
+                    }
+                }
+            },
+            //*******
+            rolesCategory(){
+                let res = [];
+                for(let roleKey in this.h.roles_obj){
+                    res.push({id:this.h.roles_obj[roleKey].id, name:this.h.roles_obj[roleKey].name});
+                }
+                return res;
+            },
+            between(start,end){return moment(end).diff(moment(start), 'days')},
+            showDate(day){return moment(new Date(this.period.start)).add(day-1, 'days')},
+            users(){
+                let users = {};
+                for(let u in this.h.users) if(this.h.users[u].active && this.role.indexOf(this.h.users[u].role_id) !== -1){
+                    users[u] = this.h.users[u]
+                }
+                return users;
+            },
+
+            async openMemberModal(date,user){
+                if(this.crewScheduling[user.id] === undefined ){
+                    await this.$store.dispatch('crewCreate',{user_id:user.id, date:date}); // 1
+                } else if(user.id in this.crewScheduling && this.crewScheduling[user.id][date] === undefined){
+                    await this.$store.dispatch('crewCreate',{user_id:user.id, date:date}); //2
+                }
+                await this.$store.commit('STAFFER', {
+                    id: user.id,
+                    date: date,
+                    open: true
+                });
+            },
+            stateStyle(date,id){
+                if(id in this.crewScheduling && this.crewScheduling[id][date] !== undefined){
+                    let state = this.crewScheduling[id][date].state;
+                    for( let i of this.stafferStateList) if(i.key === state) {
+                        return 'background:' + i.color;
+                    }
+                } else {
+                    return '';
+                }
+            },
+
+            highlight(date,user){
+                if(this.horizontal === user.id ||  this.vertical === date) {
+                    return 'opacity: 1; color:#45b984'
+                }
+            },
+            highlightOn(date,user){
+                this.horizontal = user.id;
+                this.vertical = date;
+            },
+            highlightOff(){
+                this.horizontal = null;
+                this.vertical = null;
+            },
+            thousands(val){return String(val).replace(/(\d)(?=(\d\d\d)+([^\d]|$))/g, '$1 ')},
+        },
+        created() {
+            this.$store.dispatch('fetchCrewByImplement');
+            window.onload = function () {
+                let scr = $(".calendar-wrapper");
+                scr.mousedown(function () {
+                    let startX = this.scrollLeft + event.pageX;
+                    let startY = this.scrollTop + event.pageY;
+                    scr.mousemove(function () {
+                        this.scrollLeft = startX - event.pageX;
+                        this.scrollTop = startY - event.pageY;
+                        return false;
+                    });
+                });
+                $(window).mouseup(function () {
+                    scr.off("mousemove");
+                });
+            }
+        },
+        mounted() {
+            this.$store.dispatch('fetchHelpers');
+            console.log(this.h);
+        }
+    }
+</script>
+
+<style lang="scss">
+    .h-notify-body {
+        z-index: 10500!important;
+    }
+    .userModalContainer {
+        width: 600px;
+        margin-right: 30px;
+    }
+    .state-list {
+        position: absolute;
+        z-index: 10000;
+        left: 293px;
+        top: -54px;
+    }
+    .state-list span {
+        display: inline-block;
+        padding: 3px 5px;
+        border: 1px solid white;
+        margin: 0 3px;
+
+    }
+    .i-start {
+
+    }
+</style>

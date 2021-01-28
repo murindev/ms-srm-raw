@@ -1,0 +1,256 @@
+<template>
+    <div>
+        <Modal class="actModal" v-model="open" type="drawer-right"  :hasCloseIcon="true">
+            <div class="table_container" >
+                <h4> Договор # <span class="h-tag h-tag-blue">{{lid.contract}}</span></h4>
+                <h4> Клиент
+                <span  class="h-tag h-tag-blue" v-if="customer.name">{{customer.name}} </span>
+                <span  class="h-tag h-tag-blue" v-if="customer.phone">{{customer.phone}} </span>
+                <span  class="h-tag h-tag-blue" v-if="customer.organization">{{customer.organization}}  </span>
+                </h4>
+
+                <table class="table statistic-act-table">
+                    <tbody>
+                    <tr>
+                        <td>Тип цены</td>
+                        <td>Форма оплаты</td>
+                        <td> Порядок оплаты</td>
+                        <td>Пред</td>
+                        <td>Пост</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Постоплата</td>
+                        <td>Цена предв.</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    </tbody>
+                </table>
+
+
+
+
+
+
+
+
+                Цена факт.
+                Поступления
+                Остаток
+
+
+                <table class="table statistic-act-table">
+
+                    <thead>
+                    <tr>
+                        <th>Внести поступления:</th>
+                    </tr>
+                    <tr>
+                        <th>Сумма</th>
+                        <th>Форма</th>
+                        <th>Тип</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    <tr>
+                        <td>
+                            <input type="text" v-model.number="amount">
+                        </td>
+                        <td>
+                            <Select v-model="form" :datas="payment_form" keyName="id" titleName="name" :null-option="false"/>
+                        </td>
+                        <td>
+                            <Select v-model="type" :datas="payment_type" keyName="id" titleName="name" :null-option="false"/>
+                        </td>
+                        <td>
+                            <Button color="primary" size="s" @click="insertRow()">Внести</Button>
+                        </td>
+                    </tr>
+                    </tbody>
+
+                </table>
+
+<!--                Внести
+
+                Дебет/Кредит
+                Форма-->
+<!--{{finance_table}}-->
+
+                <table class="table statistic-act-table">
+
+                    <thead>
+                    <tr>
+                        <!--form -->
+                        <th>Дебет</th>
+                        <!--form-->
+                        <th>Кредит</th>
+                        <!--type-->
+                        <th>Форма</th>
+                        <!--lid_id-->
+                        <th>Лид</th>
+                        <!--act_id-->
+<!--                        <th>Акт</th>-->
+                        <!--customer-->
+                        <th>Клиент</th>
+                        <!--manager-->
+                        <th>Менеджер</th>
+                        <!--created_at-->
+                        <th>Дата внесения</th>
+                        <!--updated_at-->
+                        <th>Дата обновления</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    <tr v-if="!finance_table.length">
+                        <td colspan="9">
+                            <span class="h-tag h-tag-yellow">Финансовой активности нет</span>
+                        </td>
+                    </tr>
+                    <tr v-for="row in finance_table">
+                        <!--type debit-->
+                        <td v-text="row.type === 1 ? row.amount : ''"></td>
+                        <!--type credit-->
+                        <td v-text="row.type === 2 ? row.amount : ''"></td>
+                        <!--form -->
+                        <td v-if="row.form === 1"><span class="h-tag h-tag-green">Нал</span></td>
+                        <td v-else-if="row.form === 2"><span class="h-tag h-tag-blue">Безнал</span></td>
+                        <!--lid_id-->
+                        <td>{{row.lid_id}}</td>
+                        <!--act_id-->
+<!--                        <td>{{row.act_id}}</td>-->
+                        <!--customer-->
+                        <td>{{row.customer}}</td>
+                        <!--manager-->
+                        <td>{{h.users[row.manager].name}}</td>
+                        <!--created_at-->
+                        <td>{{row.created_at.slice(0,-9)}}</td>
+                        <!--updated_at-->
+                        <td>{{row.updated_at.slice(0,-9)}}</td>
+                    </tr>
+                    </tbody>
+
+                    <tfoot>
+                    <tr>
+                        <th>{{sumDebit()}}</th>
+                        <th>{{sumCredit()}}</th>
+                        <th>{{sumTotal()}}</th>
+                        <th></th>
+                        <th></th>
+<!--                        <th></th>-->
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                    </tfoot>
+
+
+
+                </table>
+            </div>
+        </Modal>
+
+    </div>
+</template>
+
+<script lang="ts">
+    import { Component, Vue, Prop } from 'vue-property-decorator'
+    import { namespace } from 'vuex-class'
+    import * as moment from 'moment';
+    import { bus } from "../../bus";
+    import {IFinance, IPaymentForm, IPaymentType} from "../../types/finance";
+    import {IFieldValue, IHelper, IIdName} from "../../types/Global";
+    import {ILid} from "../../types/lid";
+    import {ICustomer} from "../../types/customer";
+    const Finance = namespace('Finance')
+
+    @Component
+    export default class FinanceByLid extends Vue {
+        @Prop() manager!: number
+        @Prop() h!: IHelper
+
+        public amount = 0
+        public form = 1
+        public type = 1
+
+
+        @Finance.State('type') private payment_type!: IPaymentType[]
+        @Finance.State('form') private payment_form!: IPaymentForm[]
+        public open: boolean = false
+        private lid:ILid = {}
+        private customer: ICustomer = {}
+
+
+        // TABLE
+        @Finance.State('table') finance_table!: IFinance[]
+        @Finance.Action('readTable') finance_readTable!: (data: IFieldValue) => void
+        @Finance.Action('createAppendRow') finance_createAppendRow!: (data: IFinance) => void
+        // @Finances.('')
+
+        async insertRow(){
+            await this.finance_createAppendRow({
+                amount: this.amount,
+                form: this.form,
+                type: this.type,
+                lid_id: this.lid.id,
+                // act_id: this.,
+                contract: this.lid.contract,
+                customer: this.customer.id,
+                manager: this.manager,
+            })
+            this.amount = 0
+            this.type = 1
+            this.form = 1
+        }
+
+        sumTotal(){
+            return this.finance_table.reduce((sum: number, o: any) =>  o.type === 1 ? sum + o.amount : sum - o.amount, 0)
+        }
+        sumDebit(){
+            return this.finance_table.reduce((sum: number, o: any) =>  o.type === 1 ? sum + o.amount : sum, 0)
+        }
+        sumCredit(){
+            return this.finance_table.reduce((sum: number, o: any) =>  o.type === 2 ? sum + o.amount : sum, 0)
+        }
+        sumCash(){}
+        sumCashless(){}
+
+        summary(){
+
+            let s = {
+
+            }
+        }
+
+
+        created() {
+
+            bus.$on('finance_byLid', (lid: ILid,customer:ICustomer) => {
+                this.finance_readTable({field: 'lid_id', value: lid})
+                this.lid = lid
+                this.customer = customer
+                this.open = true
+            })
+        }
+        mounted(){
+            // this.finance_readTable({field: 'lid_id', value: 2108})
+        }
+    }
+</script>

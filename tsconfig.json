@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "strict": true,
+    "module": "es2015",
+    "moduleResolution": "node",
+    "experimentalDecorators": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "resources/ts/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "vendor"
+  ]
+}

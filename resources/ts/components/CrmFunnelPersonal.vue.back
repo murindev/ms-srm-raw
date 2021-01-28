@@ -1,0 +1,1027 @@
+<template>
+    <div>
+        <div>
+            <DateFullRangePicker
+                    class="roof" style="left: 50px"
+                    v-model="period" :layout="['year', 'quarter', 'month', 'week','date', 'customize']" :startWeek="1"
+            />
+            <Checkbox class="roof" style="left: 305px; top: -53px;" :trueValue="true" :falseValue="false"
+                      v-model="byPeriod">За период
+            </Checkbox>
+
+            <Select v-if="h.users" v-model="tempManagers" :datas="h.users" keyName="id" titleName="name"
+                    class="roof" style="left: 550px; min-width: 200px" :multiple="true"
+                    :null-option="true" @change="startQuery()"/>
+
+            <Button color="primary" icon="h-icon-refresh" class="roof" style="left: 410px" @click="filterStatistic()">
+                Рассчитать
+            </Button>
+            <!--        <Button color="primary" icon="h-icon-left" class="roof" style="left: 480px" @click="startQuery()">Старт</Button>-->
+            <!--        <Button color="primary" icon="h-icon-left" class="roof" style="left: 580px" @click="engine()">Рассчитать</Button>-->
+            <!--:startWeek="tableHead[0].startWeek" @input="filterData()"-->
+            <!--<h4 style="margin: 0 auto; text-align: center;">Статистика по звонкам</h4>-->
+
+            <!--            <div v-if="ready">
+                            {{calcData.lid}}
+                        </div>-->
+
+            <table class="charts-table">
+                <tbody>
+<!--                <tr>
+                    <td colspan="2"><h2>Статистика по звонкам</h2></td>
+                    <td><h2>По источникам</h2></td>
+                    <td><h2>По клиентам</h2></td>
+                    <td><h2>По финансам</h2></td>
+                </tr>-->
+                <!--Компания-->
+                <tr>
+                    <td colspan="5"><h4>По компании в целом:
+                        <span v-if="!byPeriod" class="h-tag h-tag-bg-red">за весь период от начала деятельности</span>
+                        <span v-else class="h-tag h-tag-bg-red">{{period.start}} - {{period.end}}</span>
+                    </h4>
+                    </td>
+                </tr>
+                <tr class="cell-title">
+                    <td colspan="2">Статистика по звонкам</td>
+                    <td>Статистика по источникам</td>
+                    <td>Статистика по клиентам</td>
+                    <td>Статистика по финансам</td>
+                </tr>
+                <tr style="background: white">
+                    <td>
+                        <div class="chart-coll" v-if="ready">
+                            <pie-chart v-if="ready"
+                                       :chart-data="{
+                                            datasets: [ {
+                                                data: calcData.stat.callStatuses.common.map(i => i.amount),
+                                                backgroundColor: calcData.stat.callStatuses.common.map(i => i.color)
+                                            } ],
+                                            labels: calcData.stat.callStatuses.common.map(i => i.name)}"/>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="table-coll" v-if="ready">
+                            <table>
+                                <tfoot>
+                                <tr>
+                                    <th>Итого</th>
+                                    <th>{{countCallStatuses(calcData.stat.callStatuses.common)}}</th>
+                                    <th></th>
+                                </tr>
+                                </tfoot>
+
+                                <tbody>
+                                <tr v-for="status in calcData.stat.callStatuses.common">
+                                    <td>
+                                        <Button class="h-btn-xs" :style="{background: status.color, color: 'white'}">
+                                            {{status.name}}
+                                        </Button>
+                                    </td>
+                                    <td>
+                                        <Button class="h-btn-xs" :style="{background: status.color, color: 'white'}">
+                                            {{status.amount}}
+                                        </Button>
+                                    </td>
+                                    <td>
+                                        <Button class="h-btn-xs" :style="{background: status.color, color: 'white'}">
+                                            {{(status.amount/(countCallStatuses(calcData.stat.callStatuses.common)/100)).toFixed(2)}}
+                                            %
+                                        </Button>
+                                    </td>
+                                </tr>
+                                </tbody>
+
+                            </table>
+                        </div>
+
+                    </td>
+                    <td>
+                        <div class="chart-coll funnel" v-if="ready">
+                            <funnel-chart
+                                    :labels="['Всего обращений', 'Заказы']"
+                                    :subLabels="calcData.stat.appStatuses.common.map(i => i.name)"
+                                    :values="[calcData.stat.appStatuses.common.map(i => i.amount),calcData.stat.appStatuses.common.map(i => i.order)]"
+                                    :colors="[['#FFB178','#FF3C8E'],['#A0BBFF', '#EC77FF'],['#A0F9FF', '#7795FF']]"
+                                    direction="vertical"
+                                    gradientDirection="horizontal"
+                                    height="200"
+                                    width="300"
+                            />
+                        </div>
+                        <!--['новая', 'база', 'рекоммендация']-->
+                    </td>
+                    <td>
+                        <div class="chart-coll funnel" v-if="ready">
+                            <funnel-chart
+                                    :labels="['Всего обращений', 'Заказы']"
+                                    :subLabels="calcData.stat.customer.common.map(i => i.short)"
+                                    :values="[calcData.stat.customer.common.map(i => i.amount),calcData.stat.customer.common.map(i => i.order)]"
+                                    :colors="[['#FFB178','#FF3C8E'],['#A0BBFF', '#EC77FF'],['#A0F9FF', '#7795FF']]"
+                                    direction="vertical"
+                                    gradientDirection="horizontal"
+                                    height="200"
+                                    width="300"
+                            />
+                        </div>
+                    </td>
+                    <td v-if="byPeriod">
+                        <div></div>
+                        <div>
+                            Поступления: {{Math.trunc(calcData.lid.common.finReceipts.cash + calcData.lid.common.finReceipts.cashless).toLocaleString()}}
+                            = {{Math.trunc(calcData.lid.common.finReceipts.cash).toLocaleString()}}
+                            / {{Math.trunc(calcData.lid.common.finReceipts.cashless).toLocaleString()}}
+                        </div>
+                        <div></div>
+                    </td>
+                    <td v-else>
+                        <div class="chart-coll funnel" v-if="ready">
+                            <funnel-chart
+                                    :labels="[`
+                                    Всего ${Math.trunc(calcData.lid.common.actVolumePrices.cashSum).toLocaleString()} / ${Math.trunc(calcData.lid.common.actVolumePrices.cashlessSum).toLocaleString()}`,
+                                     `Оплата  ${Math.trunc(calcData.lid.common.finReceipts.cash).toLocaleString()} / ${Math.trunc(calcData.lid.common.finReceipts.cashless).toLocaleString()}`
+                                     ]"
+                                    :subLabels="[`Наличные`, `Безналичные`]"
+                                    :values="[
+                                        [Math.trunc(calcData.lid.common.actVolumePrices.cashSum),Math.trunc(calcData.lid.common.actVolumePrices.cashlessSum)],
+                                        [Math.trunc(calcData.lid.common.finReceipts.cash),Math.trunc(calcData.lid.common.finReceipts.cashless)]
+                                        ]"
+                                    :colors="[['#FFB178','#FF3C8E'],['#A0BBFF', '#EC77FF']]"
+                                    direction="vertical"
+                                    gradientDirection="horizontal"
+                                    height="200"
+                                    width="300"
+                            />
+                        </div>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>
+                        <template v-if="ready">
+                            {{calcData.lid.common.actVolumeFinishedPrices.cashSum}} <br/>
+                            {{calcData.lid.common.actVolumeFinishedPrices.cashlessSum}} <br/>
+                        </template>
+                    </td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+
+                <!--МЕНЕДЖЕРЫ-->
+                <template v-for="mgr in managers">
+                    <tr>
+                        <td colspan="4"><h3>{{getManagerField(mgr,'name')}}</h3></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div v-if="ready" class="chart-coll">
+                                <pie-chart :chart-data="{
+                                            datasets: [ {
+                                                data: calcData.stat.callStatuses.byManagers[mgr].map(i => i.amount),
+                                                backgroundColor: calcData.stat.callStatuses.byManagers[mgr].map(i => i.color) } ],
+                                            labels: calcData.stat.callStatuses.byManagers[mgr].map(i => i.name),}"/>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="table-coll" v-if="ready">
+                                <table>
+                                    <tbody>
+                                    <tr v-for="status in calcData.stat.callStatuses.byManagers[mgr]">
+                                        <td>
+                                            <Button class="h-btn-xs"
+                                                    :style="{background: status.color, color: 'white'}">{{status.name}}
+                                            </Button>
+                                        </td>
+                                        <td>
+                                            <Button class="h-btn-xs"
+                                                    :style="{background: status.color, color: 'white'}">
+                                                {{status.amount}}
+                                            </Button>
+                                        </td>
+                                        <td>
+                                            <Button class="h-btn-xs"
+                                                    :style="{background: status.color, color: 'white'}">
+                                                {{(status.amount/(countCallStatuses(calcData.stat.callStatuses.byManagers[mgr])/100)).toFixed(2)}}
+                                                %
+                                            </Button>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+
+                                    <tfoot>
+                                    <tr>
+                                        <th>Итого</th>
+                                        <th v-if="ready">
+                                            {{countCallStatuses(calcData.stat.callStatuses.byManagers[mgr])}}
+                                        </th>
+                                        <th></th>
+                                    </tr>
+                                    </tfoot>
+
+                                </table>
+                            </div>
+
+                        </td>
+                        <td>
+                            <div class="chart-coll funnel" v-if="ready">
+                                <funnel-chart
+                                        :labels="['Всего обращений', 'Заказы']"
+                                        :subLabels="calcData.stat.appStatuses.byManagers[mgr].map(i => i.name)"
+                                        :values="[calcData.stat.appStatuses.byManagers[mgr].map(i => i.amount),calcData.stat.appStatuses.byManagers[mgr].map(i => i.order)]"
+                                        :colors="[['#FFB178','#FF3C8E'],['#A0BBFF', '#EC77FF'],['#A0F9FF', '#7795FF']]"
+                                        direction="vertical"
+                                        gradientDirection="horizontal"
+                                        height="200"
+                                        width="300"
+                                />
+                            </div>
+                        </td>
+                        <td>
+                            <div class="chart-coll funnel" v-if="ready">
+                                <funnel-chart
+                                        :labels="['Всего обращений', 'Заказы']"
+                                        :subLabels="calcData.stat.customer.byManagers[mgr].map(i => i.short)"
+                                        :values="[calcData.stat.customer.byManagers[mgr].map(i => i.amount),calcData.stat.customer.byManagers[mgr].map(i => i.order)]"
+                                        :colors="[['#FFB178','#FF3C8E'],['#A0BBFF', '#EC77FF'],['#A0F9FF', '#7795FF']]"
+                                        direction="vertical"
+                                        gradientDirection="horizontal"
+                                        height="200"
+                                        width="300"
+                                />
+
+                            </div>
+                        </td>
+                        <td v-if="byPeriod">
+                            <div></div>
+                            <div>
+                                Поступления: {{Math.trunc(calcData.lid.byManagers[mgr].finReceipts.cash + calcData.lid.byManagers[mgr].finReceipts.cashless).toLocaleString()}}
+                                =  {{Math.trunc(calcData.lid.byManagers[mgr].finReceipts.cash).toLocaleString()}}
+                                / {{Math.trunc(calcData.lid.byManagers[mgr].finReceipts.cashless).toLocaleString()}}
+                            </div>
+                            <div></div>
+                        </td>
+                        <td v-else>
+                            <div class="chart-coll funnel" v-if="ready">
+                                <funnel-chart
+                                        :labels="[`
+                                    Всего ${Math.trunc(calcData.lid.byManagers[mgr].actVolumePrices.cashSum).toLocaleString()} / ${Math.trunc(calcData.lid.byManagers[mgr].actVolumePrices.cashlessSum).toLocaleString()}`,
+                                     `Оплата  ${Math.trunc(calcData.lid.byManagers[mgr].finReceipts.cash).toLocaleString()} / ${Math.trunc(calcData.lid.byManagers[mgr].finReceipts.cashless).toLocaleString()}`
+                                     ]"
+                                        :subLabels="[`Наличные`, `Безналичные`]"
+                                        :values="[
+                                        [Math.trunc(calcData.lid.byManagers[mgr].actVolumePrices.cashSum),Math.trunc(calcData.lid.byManagers[mgr].actVolumePrices.cashlessSum)],
+                                        [Math.trunc(calcData.lid.byManagers[mgr].finReceipts.cash),Math.trunc(calcData.lid.byManagers[mgr].finReceipts.cashless)]
+                                        ]"
+                                        :colors="[['#FFB178','#FF3C8E'],['#A0BBFF', '#EC77FF']]"
+                                        direction="vertical"
+                                        gradientDirection="horizontal"
+                                        height="200"
+                                        width="300"
+                                />
+                            </div>
+                        </td>
+                    </tr>
+                </template>
+                </tbody>
+            </table>
+
+        </div>
+        <Loading text="Думаю..." :loading="loading"/>
+    </div>
+
+</template>
+
+
+<script lang="ts">
+    import {Component, Prop, Vue} from 'vue-property-decorator'
+    import {namespace} from 'vuex-class'
+    import * as moment from "moment";
+    import Axios from 'axios';
+    import {IAppStatus, ICallStatus, ICrmStatistic} from "../types/crm.statistic";
+
+    const CrmStat = namespace('CrmStatistic');
+
+    const Lid = namespace('Lid')
+
+    const Funnel = namespace('Funnel');
+    const Customer = namespace('Customer');
+
+    import LineChart from "./charts/Line.vue";
+    import BarsChart from "./charts/Bars.vue";
+    import PieChart from "./charts/Pie.vue";
+
+    import FunnelChart from "./charts/Funnel.vue"
+    import {IHelperUsers, IArrHelper} from "../types/helper";
+    import {IAct} from "../types/act";
+    import {IFinance} from "../types/finance";
+    import {IImplement} from "../types/implement";
+    import {IVolume} from "../types/volume";
+    import {ILid} from "../types/lid";
+    import {IFunnel, IFunnelByLid} from "../types/funnel";
+    import {IIdName} from "../types/Global";
+    import {key} from "flatpickr/dist/types/locale";
+
+
+    @Component({
+        components: {
+            LineChart, BarsChart, PieChart, FunnelChart
+        },
+    })
+    export default class CrmFunnelPersonal extends Vue {
+        @Prop() manager!: number;
+        @Prop() h!: IArrHelper;
+
+
+//DATA
+        public period = {
+            start: moment().startOf('month').format('YYYY-MM-DD'),
+            end: moment().endOf('month').format('YYYY-MM-DD'),
+            // start: false,
+            // end: false,
+            type: 'month'
+        }
+
+        public managers = [21, 44, 41] //, 37 this.h.users.reduce((acc: number[],u) => { if(u.role_id === 2) {acc.push(u.id)} return acc},[]) ;//[21, 44, 41, 37];
+        public ready = false;
+
+
+
+        @Funnel.State('acts') acts!: IAct[]
+        @Funnel.Action('fetchActs') fetchActs!: () => void
+
+        @Funnel.State('actsById') actsById!: { [key: string]: IAct }
+        @Funnel.Action('fetchActsById') fetchActsById!: () => void
+
+        @Funnel.State('finances') finances!: IFinance[]
+        @Funnel.Action('fetchFinances') fetchFinances!: () => void
+
+        @Funnel.State('implements') implements!: IImplement[]
+        @Funnel.Action('fetchImplements') fetchImplements!: () => void
+
+        @Funnel.State('volumes') volumes!: IVolume[]
+        @Funnel.Action('fetchVolumes') fetchVolumes!: () => void
+
+        @Funnel.State('statistic') statistic!: ICrmStatistic[]
+        @Funnel.Action('fetchStatistics') fetchStatistics!: () => void
+
+        @Funnel.State('lidWithActs') lidWithActs!: ILid[]
+        @Funnel.Action('fetchLidWithActs') fetchLidWithActs!: () => void
+
+        @CrmStat.Getter('getCallStatus') callStatus!: ICallStatus[];
+        @CrmStat.Getter('getAppStatus') appStatus!: IAppStatus[];
+        @Customer.State('status') customerStatus!: IIdName[];
+
+
+        public loading: boolean = true;
+
+        public crmStatChartPie = {
+            datasets: [{
+                data: [0],
+            }],
+        }
+
+        public byLid: IFunnelByLid = {
+            lidOrderSource: {},
+            lidServicing: {},
+            lidCustomer: {},
+            lidPaymentSystem: {},
+            lidCustomerPayment: {},
+            lidPaymentRule: {},
+            lidContractTransferred: {},
+            lidContractSigned: {},
+            lidContractFile: {},
+
+            actPropertyTypes: {},
+            actVolumePest: {},
+            actVolumeSquareEntities: {},
+            actVolumeMethods: {},
+
+
+            actVolumePrices: {
+                cashSum: 0,
+                cashlessSum: 0
+            },
+
+            actVolumeFinishedPrices: {
+                cashSum: 0,
+                cashlessSum: 0
+            },
+            actVolumePayoffs: {
+                cashSum: 0,
+                cashlessSum: 0,
+            },
+
+            finReceipts: {
+                cash: 0,
+                cashless: 0,
+            },
+            finPayoffs: {
+                cash: 0,
+                cashless: 0,
+            },
+        }
+
+
+        public calcData: IFunnel = {
+            stat: {
+                callStatuses: {
+                    common: [],
+                    byManagers: {}
+                },
+                appStatuses: {
+                    common: [],
+                    byManagers: {}
+                },
+                customer: {
+                    common: [],
+                    byManagers: {}
+                },
+                sources: {
+                    common: {},
+                    byManagers: {}
+                }
+            },
+            lid: {
+                errors: {
+                    emptyContracts: [],
+                    managerStarter: [],
+                    currentManager: [],
+                    emptyServicing: [],
+                    emptyCustomer: [],
+                    finances: {
+                        actNotExist: []
+                    }
+                },
+                common: {},
+                byManagers: {}
+            }
+        }
+
+        financesData = {
+            finished: '',
+            paid: '',
+            unpaid: ''
+        }
+
+        getManagerField(id: number, field: string) {
+            let user = this.h.users.find(u => u.id == id)
+            return user ? user[field as keyof IHelperUsers] : '';
+        }
+
+        countCallStatuses(arr: ICallStatus[]) {
+            return arr.reduce((acc, i) => acc + i.amount, 0)
+        }
+
+        async initCalcData() {
+            this.$set(this.calcData.stat.callStatuses, 'common', JSON.parse(JSON.stringify(this.callStatus)))
+            await this.managers.forEach(manager => {
+                this.$set(this.calcData.stat.callStatuses.byManagers, manager, JSON.parse(JSON.stringify(this.callStatus)))
+            })
+            await this.$set(this.calcData.stat.appStatuses, 'common', JSON.parse(JSON.stringify(this.appStatus)))
+            await this.managers.forEach(manager => {
+                this.$set(this.calcData.stat.appStatuses.byManagers, manager, JSON.parse(JSON.stringify(this.appStatus)))
+            })
+            await this.$set(this.calcData.stat.customer, 'common', JSON.parse(JSON.stringify(this.customerStatus)))
+            await this.managers.forEach(manager => {
+                this.$set(this.calcData.stat.customer.byManagers, manager, JSON.parse(JSON.stringify(this.customerStatus)))
+            })
+
+            await this.$set(this.calcData.lid, 'common', JSON.parse(JSON.stringify(this.byLid)))
+            await this.managers.forEach(manager => {
+                this.$set(this.calcData.lid.byManagers, manager, JSON.parse(JSON.stringify(this.byLid)))
+            })
+        }
+
+
+        financesByManager(iFinance: IFinance, managerId: number) {
+            if (iFinance.form === 1 && iFinance.type === 1) { // debet cash
+                this.calcData.lid.byManagers[managerId].finReceipts.cash = Number(this.calcData.lid.byManagers[managerId].finReceipts.cash) + Number(iFinance.amount)
+            }
+            if (iFinance.form === 2 && iFinance.type === 1) {
+                this.calcData.lid.byManagers[managerId].finReceipts.cashless = (this.calcData.lid.byManagers[managerId].finReceipts.cashless) + Number(iFinance.amount)
+            }
+            if (iFinance.form === 1 && iFinance.type === 2) { // credit cash
+                this.calcData.lid.byManagers[managerId].finPayoffs.cash = Number(this.calcData.lid.byManagers[managerId].finPayoffs.cash) + Number(iFinance.amount)
+            }
+            if (iFinance.form === 2 && iFinance.type === 2) {
+                this.calcData.lid.byManagers[managerId].finPayoffs.cashless = Number(this.calcData.lid.byManagers[managerId].finPayoffs.cashless) + Number(iFinance.amount)
+            }
+        }
+
+        compareDateTime(date: string) {
+            let itemDate = new Date(date);
+            let periodEnd = new Date(this.period.end); //  + ' 23:59:59'
+            // console.log(periodEnd);
+            if (itemDate >= new Date(this.period.start) && itemDate <= periodEnd) {
+                return true
+            } else {
+                return false
+            }
+        }
+
+        async filterStatistic() {
+            await this.initCalcData()
+            await this.statistic.forEach(item => {
+                if (this.byPeriod && !this.compareDateTime(item.date)) {
+                    return false;
+                } else {
+                    this.setCallStatuses(item)
+                    this.setAppStatuses(item)
+                    this.setCustomerTypes(item)
+                    // this.setFinances(item)
+                }
+            });
+            await this.lidWithActs.forEach(iLid => {
+                this.lidErrors(iLid)
+                this.lidOrdersSource(iLid)
+                this.lidServicing(iLid)
+                this.lidCustomer(iLid)
+                this.lidPaymentSystem(iLid)
+                this.lidCustomerPayment(iLid)
+                this.lidPaymentRule(iLid)
+                this.lidContractTransferred(iLid)
+                this.lidContractSigned(iLid)
+                this.lidContractFile(iLid)
+
+                iLid.acts?.forEach(iLidAct => {
+                    this.actPropertyTypes(iLidAct)
+
+                    iLidAct.volume?.forEach(iLidActVolume => {
+                        this.actVolumePest(iLidActVolume, iLidAct)
+                        this.actVolumeSquareEntities(iLidActVolume, iLidAct)
+                        this.actVolumeMethods(iLidActVolume, iLidAct)
+                        this.actVolumePrices(iLidActVolume, iLidAct)
+                        this.actVolumeFinishedPrices(iLidActVolume, iLidAct)
+                    })
+                })
+
+            })
+
+            await this.finances.forEach(iFinance => {
+                // common
+                if (this.byPeriod && (iFinance.created_at && !this.compareDateTime(iFinance.created_at))) {
+                    return false;
+                } else {
+                    if (iFinance.form === 1 && iFinance.type === 1) { // debet cash
+                        this.calcData.lid.common.finReceipts.cash = Number(this.calcData.lid.common.finReceipts.cash) + Number(iFinance.amount);
+                    }
+                    if (iFinance.form === 2 && iFinance.type === 1) {
+                        this.calcData.lid.common.finReceipts.cashless = Number(this.calcData.lid.common.finReceipts.cashless) + Number(iFinance.amount);
+                    }
+                    if (iFinance.form === 1 && iFinance.type === 2) { // credit cash
+                        this.calcData.lid.common.finPayoffs.cash = Number(this.calcData.lid.common.finPayoffs.cash) + Number(iFinance.amount);
+                    }
+                    if (iFinance.form === 2 && iFinance.type === 2) {
+                        this.calcData.lid.common.finPayoffs.cashless = Number(this.calcData.lid.common.finPayoffs.cashless) + Number(iFinance.amount);
+                    }
+
+                    iFinance.act_id?.forEach(async iFinanceActId => {
+
+                        if (await this.actsById[iFinanceActId] === undefined) {
+                            this.calcData.lid.errors.finances.actNotExist.push(iFinance)
+                            return false
+                        }
+
+                        let managerId = this.actsById[iFinanceActId].creator;
+
+                        if (managerId && this.managers.indexOf(managerId) != -1) {
+
+                            let volumes = await this.actsById[iFinanceActId].volume;
+                            if (volumes && volumes.length) {
+                                if (iFinance.form === 1 && iFinance.type === 1) { // debet cash
+                                    let cashSum = await volumes.reduce((acc, vol) => acc + Number(vol.price_fact), 0)
+                                    this.calcData.lid.byManagers[managerId].finReceipts.cash = this.calcData.lid.byManagers[managerId].finReceipts.cash + Number(cashSum)
+                                }
+
+                                if (iFinance.form === 2 && iFinance.type === 1) {
+                                    let cashlessSum = await volumes.reduce((acc, vol) => acc + Number(vol.price_standard), 0)
+                                    this.calcData.lid.byManagers[managerId].finReceipts.cashless = this.calcData.lid.byManagers[managerId].finReceipts.cashless + Number(cashlessSum)
+                                }
+                                if (iFinance.form === 1 && iFinance.type === 2) { // credit cash
+                                    this.calcData.lid.byManagers[managerId].finPayoffs.cash = Number(this.calcData.lid.byManagers[managerId].finPayoffs.cash) + Number(this.actsById[iFinanceActId].contractor_fee)
+                                }
+                                if (iFinance.form === 2 && iFinance.type === 2) {
+                                    this.calcData.lid.byManagers[managerId].finPayoffs.cashless = Number(this.calcData.lid.byManagers[managerId].finPayoffs.cashless) + Number(this.actsById[iFinanceActId].contractor_fee_cashless)
+                                }
+                            }
+
+
+                        }
+
+
+                    })
+
+
+                }
+
+
+
+
+
+
+
+            })
+            await this.$set(this.$data, 'ready', true)
+
+            if (this.ready) {
+                console.log('initCalcData', this.calcData.lid.common);
+                console.log('initCalcData', this.calcData.lid.byManagers);
+                // console.log('finances', this.finances);
+                // console.log('actsById', this.actsById);
+                // console.log('lidWithActs', this.lidWithActs);
+                console.log('this.calcData.lid.errors', this.calcData.lid.errors);
+            }
+
+
+        }
+
+
+        async setCallStatuses(iCrmStatistic: ICrmStatistic) {
+            await this.calcData.stat.callStatuses.common.map(i => i.id === iCrmStatistic.call_status ? i.amount++ : i)
+            if (iCrmStatistic.manager && await this.managers.indexOf(iCrmStatistic.manager) != -1) {
+                let statusKey = await this.callStatus.findIndex(index => index.id === iCrmStatistic.call_status)
+                if (statusKey >= 0 && iCrmStatistic.manager) {
+                    await this.calcData.stat.callStatuses.byManagers[iCrmStatistic.manager][statusKey].amount++
+                } else {
+                    await this.calcData.stat.callStatuses.byManagers[iCrmStatistic.manager][5].amount++
+                }
+            }
+        }
+
+        async setAppStatuses(iCrmStatistic: ICrmStatistic) {
+            await this.calcData.stat.appStatuses.common.map(iAppStatus => {
+                if (iAppStatus.id === iCrmStatistic.app_status) {
+                    iAppStatus.amount++
+                    if (iCrmStatistic.call_status === 7) {
+                        iAppStatus.order++
+                    }
+                }
+            })
+
+            if (iCrmStatistic.manager && await this.managers.indexOf(iCrmStatistic.manager) != -1) {
+                let appStatusKey = await this.appStatus.findIndex(index => index.id === iCrmStatistic.app_status)
+                if (appStatusKey >= 0 && iCrmStatistic.manager) {
+                    await this.calcData.stat.appStatuses.byManagers[iCrmStatistic.manager].map(iAppStatus => {
+                        if (iAppStatus.id === iCrmStatistic.app_status) {
+                            iAppStatus.amount++
+                            if (iCrmStatistic.call_status === 7) {
+                                iAppStatus.order++
+                            }
+                        }
+                    })
+                }
+            }
+        }
+
+        async setCustomerTypes(iCrmStatistic: ICrmStatistic) {
+
+            if (!iCrmStatistic.customer_id || !iCrmStatistic.customer) {
+                await this.calcData.stat.customer.common[2].amount++
+                if (iCrmStatistic.call_status === 7) {
+                    await this.calcData.stat.customer.common[2].order++
+                }
+            } else {
+                if (iCrmStatistic.customer.status === 0) {
+                    await this.calcData.stat.customer.common[2].amount++
+                    if (iCrmStatistic.call_status === 7) {
+                        await this.calcData.stat.customer.common[2].order++
+                    }
+                }
+                if (iCrmStatistic.customer.status === 1) {
+                    await this.calcData.stat.customer.common[0].amount++
+                    if (iCrmStatistic.call_status === 7) {
+                        await this.calcData.stat.customer.common[0].order++
+                    }
+                }
+                if (iCrmStatistic.customer.status === 2) {
+                    await this.calcData.stat.customer.common[1].amount++
+                    if (iCrmStatistic.call_status === 7) {
+                        await this.calcData.stat.customer.common[1].order++
+                    }
+                }
+            }
+
+            if (iCrmStatistic.manager && await this.managers.indexOf(iCrmStatistic.manager) != -1) {
+                if (!iCrmStatistic.customer_id || !iCrmStatistic.customer) {
+                    await this.calcData.stat.customer.byManagers[iCrmStatistic.manager][2].amount++
+                    if (iCrmStatistic.call_status === 7) {
+                        await this.calcData.stat.customer.byManagers[iCrmStatistic.manager][2].order++
+                    }
+                } else {
+                    if (iCrmStatistic.customer.status === 0) {
+                        await this.calcData.stat.customer.byManagers[iCrmStatistic.manager][2].amount++
+                        if (iCrmStatistic.call_status === 7) {
+                            await this.calcData.stat.customer.byManagers[iCrmStatistic.manager][2].order++
+                        }
+                    }
+                    if (iCrmStatistic.customer.status === 1) {
+                        await this.calcData.stat.customer.byManagers[iCrmStatistic.manager][0].amount++
+                        if (iCrmStatistic.call_status === 7) {
+                            await this.calcData.stat.customer.byManagers[iCrmStatistic.manager][0].order++
+                        }
+                    }
+                    if (iCrmStatistic.customer.status === 2) {
+                        await this.calcData.stat.customer.byManagers[iCrmStatistic.manager][1].amount++
+                        if (iCrmStatistic.call_status === 7) {
+                            await this.calcData.stat.customer.byManagers[iCrmStatistic.manager][1].order++
+                        }
+                    }
+                }
+            }
+        }
+
+
+        public noLid = 0;
+        public hasLid = 0;
+        public lidsCount = 0;
+
+        /*
+                async setFinances(iCrmStatistic: ICrmStatistic) {
+
+                    if (iCrmStatistic.call_status !== 7) {
+                        return false
+                    }
+
+                    if (iCrmStatistic.lid_id) {
+                        this.hasLid++
+                    } else {
+                        this.noLid++
+                        console.log(iCrmStatistic.id);
+                    }
+
+                }
+        */
+
+// by lid
+
+        /*        async checkMultiply(obj: any,key: any){
+                    console.log('key',key);
+                    // return  obj && Object.keys(obj).indexOf(key) != -1;
+                    if(obj && Object.keys(obj).indexOf(key) != -1){
+                       await obj[key]++
+                    } else {
+                        await obj[key]++
+                    }
+                }*/
+
+        async lidErrors(iLid: ILid) {
+            // Лиды без актов
+            if (!iLid.acts?.length && iLid.id) {
+                this.calcData.lid.errors.emptyContracts.push(iLid.id)
+            }
+            if (!iLid.manager_starter && iLid.id) {
+                this.calcData.lid.errors.managerStarter.push(iLid.id)
+            }
+            if (!iLid.manager && iLid.id) {
+                this.calcData.lid.errors.currentManager.push(iLid.id)
+            }
+            if (!iLid.servicing && iLid.id) {
+                this.calcData.lid.errors.emptyServicing.push(iLid.id)
+            }
+            if (iLid.client == null && iLid.id) { // check empty customer errors
+                this.calcData.lid.errors.emptyCustomer.push(iLid.id)
+            }
+        }
+
+        async keySetter(obj: any, key: string, value: any) {
+            if (obj && Object.keys(obj).indexOf(key) == -1) {
+                await this.$set(obj, key, value);
+            }
+        }
+
+// lidWithActs
+        async lidOrdersSource(iLid: ILid) {
+            let key: string = await iLid.site && iLid.site != undefined ? iLid.site.toString() : 'null';
+            // common
+            await this.keySetter(this.calcData.lid.common.lidOrderSource, key, 0)
+            await this.calcData.lid.common.lidOrderSource[key]++
+            // byManager
+            if (iLid.manager && this.managers.indexOf(iLid.manager) != -1) {
+                await this.keySetter(this.calcData.lid.byManagers[iLid.manager].lidOrderSource, key, 0)
+                await this.calcData.lid.byManagers[iLid.manager].lidOrderSource[key]++
+            }
+        }
+
+        async lidServicing(iLid: ILid) {
+            let key: string = await iLid.site && iLid.site != undefined ? iLid.site.toString() : 'null';
+            // common
+            await this.keySetter(this.calcData.lid.common.lidServicing, key, 0)
+            await this.calcData.lid.common.lidServicing[key]++
+            // byManager
+            if (iLid.manager && this.managers.indexOf(iLid.manager) != -1) {
+                await this.keySetter(this.calcData.lid.byManagers[iLid.manager].lidServicing, key, 0)
+                await this.calcData.lid.byManagers[iLid.manager].lidServicing[key]++
+            }
+        }
+
+        async lidCustomer(iLid: ILid) {
+            let key: string = 'null';
+            if (iLid.client !== null) {
+                key = await iLid.client?.status && iLid.client?.status != undefined ? iLid.client.status.toString() : 'null';
+            }
+            // common
+            await this.keySetter(this.calcData.lid.common.lidCustomer, key, 0)
+            await this.calcData.lid.common.lidCustomer[key]++
+            // byManager
+            if (iLid.manager && this.managers.indexOf(iLid.manager) != -1) {
+                await this.keySetter(this.calcData.lid.byManagers[iLid.manager].lidCustomer, key, 0)
+                await this.calcData.lid.byManagers[iLid.manager].lidCustomer[key]++
+            }
+        }
+
+        async lidPaymentSystem(iLid: ILid) {
+            let key: string = await iLid.payment_system && iLid.payment_system != undefined ? iLid.payment_system.toString() : 'null';
+            // common
+            await this.keySetter(this.calcData.lid.common.lidPaymentSystem, key, 0)
+            await this.calcData.lid.common.lidPaymentSystem[key]++
+            // byManager
+            if (iLid.manager && this.managers.indexOf(iLid.manager) != -1) {
+                await this.keySetter(this.calcData.lid.byManagers[iLid.manager].lidPaymentSystem, key, 0)
+                await this.calcData.lid.byManagers[iLid.manager].lidPaymentSystem[key]++
+            }
+        }
+
+        async lidCustomerPayment(iLid: ILid) {
+            let key: string = await iLid.customer_payment && iLid.customer_payment != undefined ? iLid.customer_payment.toString() : 'null';
+            // common
+            await this.keySetter(this.calcData.lid.common.lidCustomerPayment, key, 0)
+            await this.calcData.lid.common.lidCustomerPayment[key]++
+            // byManager
+            if (iLid.manager && this.managers.indexOf(iLid.manager) != -1) {
+                await this.keySetter(this.calcData.lid.byManagers[iLid.manager].lidCustomerPayment, key, 0)
+                await this.calcData.lid.byManagers[iLid.manager].lidCustomerPayment[key]++
+            }
+        }
+
+        async lidPaymentRule(iLid: ILid) {
+            let key: string = await iLid.payment_rule && iLid.payment_rule != undefined ? iLid.payment_rule.toString() : 'null';
+            // common
+            await this.keySetter(this.calcData.lid.common.lidPaymentRule, key, 0)
+            await this.calcData.lid.common.lidPaymentRule[key]++
+            // byManager
+            if (iLid.manager && this.managers.indexOf(iLid.manager) != -1) {
+                await this.keySetter(this.calcData.lid.byManagers[iLid.manager].lidPaymentRule, key, 0)
+                await this.calcData.lid.byManagers[iLid.manager].lidPaymentRule[key]++
+            }
+        }
+
+        async lidContractTransferred(iLid: ILid) {
+            let key: string = await iLid.contract_transferred && iLid.contract_transferred != undefined ? iLid.contract_transferred.toString() : 'null';
+            // common
+            await this.keySetter(this.calcData.lid.common.lidContractTransferred, key, 0)
+            await this.calcData.lid.common.lidContractTransferred[key]++
+            // byManager
+            if (iLid.manager && this.managers.indexOf(iLid.manager) != -1) {
+                await this.keySetter(this.calcData.lid.byManagers[iLid.manager].lidContractTransferred, key, 0)
+                await this.calcData.lid.byManagers[iLid.manager].lidContractTransferred[key]++
+            }
+        }
+
+        async lidContractSigned(iLid: ILid) {
+            let key: string = await iLid.contract_signed && iLid.contract_signed != undefined ? iLid.contract_signed.toString() : 'null';
+            // common
+            await this.keySetter(this.calcData.lid.common.lidContractSigned, key, 0)
+            await this.calcData.lid.common.lidContractSigned[key]++
+            // byManager
+            if (iLid.manager && this.managers.indexOf(iLid.manager) != -1) {
+                await this.keySetter(this.calcData.lid.byManagers[iLid.manager].lidContractSigned, key, 0)
+                await this.calcData.lid.byManagers[iLid.manager].lidContractSigned[key]++
+            }
+        }
+
+        async lidContractFile(iLid: ILid) {
+            let key: string = await iLid.contract_file !== null ? '1' : 'null';
+            // common
+            await this.keySetter(this.calcData.lid.common.lidContractFile, key, 0)
+            await this.calcData.lid.common.lidContractFile[key]++
+            // byManager
+            if (iLid.manager && this.managers.indexOf(iLid.manager) != -1) {
+                await this.keySetter(this.calcData.lid.byManagers[iLid.manager].lidContractFile, key, 0)
+                await this.calcData.lid.byManagers[iLid.manager].lidContractFile[key]++
+            }
+        }
+
+// ACTS
+
+        async actPropertyTypes(iLidAct: IAct) {
+            let key: string = await iLidAct.property_type && iLidAct.property_type != undefined ? iLidAct.property_type.toString() : 'null';
+            // common
+            await this.keySetter(this.calcData.lid.common.actPropertyTypes, key, 0)
+            await this.calcData.lid.common.actPropertyTypes[key]++
+            // byManager
+            if (iLidAct.creator && this.managers.indexOf(iLidAct.creator) != -1) {
+                await this.keySetter(this.calcData.lid.byManagers[iLidAct.creator].actPropertyTypes, key, 0)
+                await this.calcData.lid.byManagers[iLidAct.creator].actPropertyTypes[key]++
+            }
+        }
+
+
+// ACT VOLUMES
+        async actVolumePest(iLidActVolume: IVolume, iLidAct: IAct) {
+            let key: string = await iLidActVolume.pest && iLidActVolume.pest != undefined ? iLidActVolume.pest.toString() : 'null';
+            // common
+            await this.keySetter(this.calcData.lid.common.actVolumePest, key, 0)
+            await this.calcData.lid.common.actVolumePest[key]++
+            // byManager
+            if (iLidAct.creator && this.managers.indexOf(iLidAct.creator) != -1) {
+                await this.keySetter(this.calcData.lid.byManagers[iLidAct.creator].actVolumePest, key, 0)
+                await this.calcData.lid.byManagers[iLidAct.creator].actVolumePest[key]++
+            }
+        }
+
+        async actVolumeSquareEntities(iLidActVolume: IVolume, iLidAct: IAct) {
+            let key: string = await iLidActVolume.entity && iLidActVolume.entity != undefined ? iLidActVolume.entity.toString() : 'null';
+            // common
+            await this.keySetter(this.calcData.lid.common.actVolumeSquareEntities, key, 0)
+            await this.calcData.lid.common.actVolumeSquareEntities[key]++
+            // byManager
+            if (iLidAct.creator && this.managers.indexOf(iLidAct.creator) != -1) {
+                await this.keySetter(this.calcData.lid.byManagers[iLidAct.creator].actVolumeSquareEntities, key, 0)
+                await this.calcData.lid.byManagers[iLidAct.creator].actVolumeSquareEntities[key]++
+            }
+        }
+
+        async actVolumeMethods(iLidActVolume: IVolume, iLidAct: IAct) {
+
+            await iLidActVolume.method?.forEach(methodId => {
+                // common
+                this.keySetter(this.calcData.lid.common.actVolumeMethods, methodId.toString(), 0)
+                this.calcData.lid.common.actVolumeMethods[methodId]++
+                // byManager
+                if (iLidAct.creator && this.managers.indexOf(iLidAct.creator) != -1) {
+                    this.keySetter(this.calcData.lid.byManagers[iLidAct.creator].actVolumeSquareEntities, methodId.toString(), 0)
+                    this.calcData.lid.byManagers[iLidAct.creator].actVolumeSquareEntities[methodId]++
+                }
+            })
+        }
+
+        // FINANCES by Volumes
+
+        async actVolumePrices(iLidActVolume: IVolume, iLidAct: IAct) {
+            // common
+            this.calcData.lid.common.actVolumePrices.cashSum = Number(this.calcData.lid.common.actVolumePrices.cashSum) + Number(iLidActVolume.price_fact)
+            this.calcData.lid.common.actVolumePrices.cashlessSum = Number(this.calcData.lid.common.actVolumePrices.cashlessSum) + Number(iLidActVolume.price_standard)
+            // byManager
+            if (iLidAct.creator  && this.managers.indexOf(iLidAct.creator) != -1) { //
+                this.calcData.lid.byManagers[iLidAct.creator].actVolumePrices.cashSum = Number(this.calcData.lid.byManagers[iLidAct.creator].actVolumePrices.cashSum) + Number(iLidActVolume.price_fact)
+                this.calcData.lid.byManagers[iLidAct.creator].actVolumePrices.cashlessSum = Number(this.calcData.lid.byManagers[iLidAct.creator].actVolumePrices.cashlessSum) + Number(iLidActVolume.price_standard)
+            }
+        }
+
+        async actVolumeFinishedPrices(iLidActVolume: IVolume, iLidAct: IAct){
+            if(await iLidAct.finished ){
+                if(this.byPeriod && await (iLidAct.implement_first?.end_date && !this.compareDateTime(iLidAct.implement_first.end_date))){//
+                    return  false;
+                }
+                console.log('kkkk', await iLidAct.implement_first?.end_date);
+                this.calcData.lid.common.actVolumeFinishedPrices.cashSum = Number(this.calcData.lid.common.actVolumeFinishedPrices.cashSum) + Number(iLidActVolume.price_fact)
+                this.calcData.lid.common.actVolumeFinishedPrices.cashlessSum = Number(this.calcData.lid.common.actVolumeFinishedPrices.cashlessSum) + Number(iLidActVolume.price_standard)
+            }
+
+        }
+
+
+// METHODS
+
+// managers
+        public byPeriod = false;
+        public currentManager = this.manager;
+        public tempManagers = []
+
+        // public managers: IHelperUsers[] = [];
+
+        async managersSort() {
+            this.$set(this.$data, 'managers',
+                this.h.users.reduce(function (newArr, iHelperUsers: IHelperUsers) {
+                    if (iHelperUsers.role_id === 2 && iHelperUsers.active === 1) {
+                        // @ts-ignore
+                        newArr.push(iHelperUsers);
+                    }
+                    return newArr;
+                }, [])
+            );
+        }
+
+        async mounted() {
+            // await this.fetchActs();
+            await this.fetchActsById();
+            await this.fetchFinances();
+            // await this.fetchImplements();
+            // await this.fetchVolumes();
+            await this.fetchStatistics();
+            await this.fetchLidWithActs();
+            // await this.engine();
+            await this.$set(this.$data, 'loading', false);
+            // await this.filterStatistic()
+
+        }
+    }
+</script>

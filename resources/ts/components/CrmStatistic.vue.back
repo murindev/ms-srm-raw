@@ -1,0 +1,630 @@
+<template>
+    <div>
+        <top-buttons :manager="manager"/>
+        <edit-row :h="h" :manager="manager"/>
+
+
+        <div class="statistic-table-container">
+            <table class="statistic-table">
+
+                <thead>
+                <tr>
+                    <th v-for="i in tableHead" :style="i.width ? 'max-width:' + i.width + 'px' : 'width:auto'">
+                        {{i.name}}
+                    </th>
+                </tr>
+                <tr>
+                    <th v-for="(obj,key) in tableHead" v-if="obj.key !== 'time'" :style="obj.width ? 'max-width:' + obj.width + 'px' : 'width:auto'">
+
+                        <input v-if="obj.key === 'id'" type="text" v-model.number="obj.v" @input="filterData()">
+
+                        <DatePicker v-else-if="obj.key === 'date'" v-model="obj.v" :placeholder="'Дата'" @input="filterData()"/>
+
+                        <Select v-else-if="obj.key === 'site'" v-model="obj.v" :datas="h.companies" keyName="id" titleName="name"/>
+
+                        <Select v-else-if="obj.key === 'manager'" v-model="obj.v" :datas="obj.select()" keyName="id" titleName="name"/>
+
+                        <Select v-else-if="obj.key === 'call_status'" v-model="obj.v" :datas="obj.select.filter(o => o.select)" keyName="id" titleName="name"/>
+
+                        <Select v-else-if="obj.key === 'app_status'" v-model="obj.v" :datas="obj.select" keyName="id" titleName="name"/>
+
+                        <Select  v-else-if="obj.key === 'app_status'" v-model="obj.v" :datas="obj.select" keyName="id" titleName="name"></Select>
+
+                        <input  v-else-if="obj.key === 'cause'" type="text" v-model="obj.v">
+
+                        <input v-else-if="obj.key === 'address'" type="text" v-model="obj.v">
+
+                        <input v-else-if="obj.key === 'cash'" type="number" v-model="obj.v" :style="obj.width ? 'max-width:' + obj.width + 'px' : 'width:auto'">
+
+                        <input v-else-if="obj.key === 'cashless'" type="number" v-model="obj.v" :style="obj.width ? 'max-width:' + obj.width + 'px' : 'width:auto'">
+
+                        <input v-else-if="obj.key === 'phone'" type="text" v-model="obj.v" style="width: 100%;">
+
+                        <input v-else-if="obj.key === 'name'" type="text" v-model="obj.v" style="width: 100%;">
+
+                        <input v-else-if="obj.key === 'contract'" type="text" v-model="obj.v" style="width: 100%;">
+
+                        <input v-else-if="obj.key === 'implement_date'" type="text" v-model="obj.v" style="width: 100%;">
+
+                        <Button v-else-if="obj.key === 'set'" class="h-btn-s" icon="h-icon-close" disabled></Button>
+
+                        <template v-else></template>
+                    </th>
+                </tr>
+                </thead>
+
+
+                <tbody>
+                <tr
+                        v-for="(row, rowKey) in filterData()"
+                        :id="'tr'+row.id"
+                        :class="row.call_status === 10 ? 'row-deleted': ''"
+                        :style="row.editing ? 'background: #ff000014' : ''"
+                        @dblclick="initTableRow(row)"
+
+                >
+                    <td class="indicator-nest">
+                        <div class="indicator" v-if="row.editing">
+                            <span class="h-tag h-tag-yellow">Редактирует {{h.users[row.editing].name}} </span>
+                        </div>
+                        {{row.id}}
+                        <template v-if="manager === 1"> - {{rowKey}}</template>
+                    </td>
+                    <td class="no-wrap" rel="datetime">
+                        <span class="h-tag h-tag-blue">{{row.date}}</span>
+                        <span class="h-tag h-tag-primary">{{row.time}}</span>
+                    </td>
+
+                    <td v-if="row.site">{{h.companies[row.site].name}}</td>
+                    <td v-else></td>
+
+                    <td v-if="row.manager " class="no-wrap">
+                        <span v-if="row.manager === 9999">g Семен и Co</span>
+                        <span v-else>{{h.users[Number(row.manager)].name}}</span>
+                    </td>
+                    <td v-else></td>
+
+                    <td v-if="row.call_status">
+                        <span class="h-tag " :class="statusDesign(row.call_status)">
+                            {{callStatus.filter(a => a.id === row.call_status)[0].name}}
+                        </span>
+                    </td>
+                    <td v-else></td>
+
+                    <td v-if="row.app_status">
+                        <span class="h-tag " :class="statusDesign(row.app_status)">
+                            {{appStatus.filter(a => a.id === row.app_status)[0].name}}
+                        </span>
+                    </td>
+                    <td v-else></td>
+
+                    <td style="max-width: 200px">
+                        <div>{{row.cause}}</div>
+                    </td>
+                    <td  style="max-width: 200px; text-align: left;">{{row.address}}</td>
+                    <td>{{row.cash}}</td>
+                    <td>{{row.cashless}}</td>
+                    <td>
+                        <template v-if="row.phone && row.phone.length === 11">
+                            <the-mask :value="row.phone" mask="+#(###) ### ## ##" disabled style="width: 110px"/>
+                        </template>
+                        <template v-else>{{row.phone}}</template>
+
+                        <template v-if="row.phone_ext">
+                            <the-mask :value="row.phone_ext" mask="+#(###) ### ## ##" disabled style="width: 110px"/>
+                        </template>
+                    </td>
+                    <td>{{row.name}}</td>
+                    <td style="max-width: 100px;">{{row.contract}}</td>
+
+                    <td>{{row.implement_date}}</td>
+
+                </tr>
+                </tbody>
+
+            </table>
+        </div>
+
+
+    </div>
+</template>
+
+<script lang="ts">
+    import {Component, Prop, Vue} from 'vue-property-decorator'
+    import {State, Getter, Action, Mutation, namespace} from 'vuex-class'
+    // interfaces
+    import * as Globals from '../types/Global'
+    import * as Types from '../types/crm.statistic'
+    import {IAppStatus, ICallStatus, ICrmStatistic} from '../types/crm.statistic'
+    // eof interfaces
+    import axios from 'axios'
+    import * as moment from 'moment';
+
+
+    const CrnStatistic = namespace('CrmStatistic')
+    const Helper = namespace('Helper')
+    const Customer = namespace('Customer')
+
+    import TopButtons from "./crm/statistic/TopButtons.vue";
+    import EditRow from "./crm/statistic/EditRow.vue";
+    import {ICustomer} from "../types/customer";
+    import {bus} from "../bus";
+    import {ILid} from "../types/lid";
+
+
+    @Component({
+        components: {TopButtons,EditRow}
+    })
+    export default class CrmStatistic extends Vue {
+        @Prop(Number) manager!: number
+        @Prop() h!: Globals.IHelper
+
+        public curatorsRole: Array<number> = [4]
+
+// table
+        public callStatus: ICallStatus[] = [
+            {id: 1, name: 'спам', select: true},
+            {id: 2, name: 'перезвонить', select: true},
+            {id: 3, name: 'невыгодно', select: true},
+            {id: 4, name: 'нецелевой', select: true},
+            {id: 5, name: 'отказ', select: true},
+            {id: 6, name: 'история', select: false},
+            {id: 7, name: 'заказ', select: true, disabled: true},
+            {id: 8, name: 'база', select: false},
+            {id: 9, name: 'новая', select: false},
+            {id: 10, name: 'на удаление', select: true},
+        ]
+        public appStatus: IAppStatus[] = [
+            {id: 1, name: 'новая'},
+            {id: 2, name: 'база'},
+            {id: 3, name: 'рекоммендация'}
+        ]
+        public tableHead = [
+            {
+                key: 'id', name: 'ID', width: 70, v: null,
+                f  : function (el: ICrmStatistic) {
+                    return el.id === this.v;
+                },
+            }, {
+                key: 'date', name: 'Дата', width: 150, v: null,
+                f  : function (el: ICrmStatistic) {
+                    return el.date === this.v;
+                },
+            }, {
+                key   : 'site',
+                width : 150,
+                select: () => {
+                    // if (this.settingsSite.length) {
+                    //     return this.settingsSite.map(a => {
+                    //         return this.h.companies[a];
+                    //     })
+                    // } else {
+                    //     return Object.keys(this.h.companies).map((key:any) => {
+                    //         return this.h.companies[key];
+                    //     });
+                    // }
+                },
+                v     : null,
+                f     : function (el: ICrmStatistic) {
+                    return el['site'] === this.v
+                }
+            }, {
+                key   : 'manager',
+                name  : 'Менеджер',
+                width : 150,
+                type  : 'select',
+
+                select: () => {
+                    let res = [];
+                    let permission = [1,2,4]
+                    for(let a in this.h.users){
+                        //@ts-ignore
+                        if([1,2,4].indexOf(this.h.users[a].role_id) !== -1 ) {
+                            //@ts-ignore
+                            res.push(this.h.users[a])
+                        }
+                    }
+                    res.push({id: 9999, name: 'Семен и Co'});
+                    return res
+                //     if (this.settingsUsers.length) {
+                //         let s = this.settingsUsers.map(a => {
+                //             return this.h.users[a]
+                //         });
+                //         s.push({id: 9999, name: 'Семен и Co'});
+                //         return s;
+                //     } else {
+                //         let s = Object.keys(this.h.users).map((a) => {
+                //             return this.h.users[a]
+                //         });
+                //         s.push({id: 9999, name: 'Семен и Co'});
+                //         return s;
+                //     }
+                },
+                fields: {
+                    9999: 'Семен и Co',
+                    2   : 'dd',
+                    21  : 'Татьяна',
+                    22  : 'Константин',
+                    40  : 'Светлана',
+                    20  : 'Андрей',
+                },
+                v     : null,
+                f     : function (el: ICrmStatistic) {
+                    return el.manager === this.v
+                }
+
+            }, {
+                key   : 'call_status',
+                name  : 'Статус',
+                width : 150,
+                type  : 'select',
+                select: this.callStatus,
+/*                    [
+                    {id: 1, name: 'спам'},
+                    {id: 2, name: 'перезвонить'},
+                    {id: 3, name: 'невыгодно'},
+                    {id: 4, name: 'нецелевой'},
+                    {id: 5, name: 'отказ'},
+                    {id: 6, name: 'история'}, //
+                    {id: 7, name: 'заказ'},
+                    {id: 8, name: 'база'}, //
+                    {id: 9, name: 'новая'}, //
+                    {id: 10, name: 'на удаление'},
+                ]*/
+
+                v     : null,
+                f     : function (el: ICrmStatistic) {
+                    return el.call_status === this.v
+                }
+            }, {
+                key   : 'app_status',
+                name  : 'Статус заявки',
+                width : 150,
+                type  : 'select',
+                select: this.appStatus,
+                v     : null,
+                f     : function (el: ICrmStatistic) {
+                    return el.app_status === this.v
+                }
+
+            }, {
+                key  : 'cause',
+                name : 'Комментарий',
+                width: 150,
+                v    : '',
+                f    : function (el: ICrmStatistic) {
+                    return  el.cause && String(el.cause).toLowerCase().indexOf(this.v.toLowerCase()) !== -1
+                }
+            }, {
+                key  : 'address',
+                name : 'Адрес',
+                width: 150,
+                max  : true,
+                v    : '',
+                f    : function (el: ICrmStatistic) {
+                    return el.address && String(el.address).toLowerCase().indexOf(this.v.toLowerCase()) !== -1
+                }
+            }, {
+                key  : 'cash',
+                name : 'Нал',
+                width: 75,
+                max  : true,
+                v    : '',
+                f    : function (el: ICrmStatistic) {
+                    return el.cash && String(el.cash).toLowerCase().indexOf(this.v.toLowerCase()) !== -1
+                }
+            }, {
+                key  : 'cashless',
+                name : 'Безнал',
+                width: 75,
+                v    : '',
+                f    : function (el: ICrmStatistic) {
+                    return el.cashless && String(el.cashless).toLowerCase().indexOf(this.v.toLowerCase()) !== -1
+                }
+            }, {
+                key  : 'phone',
+                name : 'Телефон',
+                width: 110,
+                v    : '',
+                f    : function (el: ICrmStatistic) {
+                    return el.phone && String(el.phone).toLowerCase().indexOf(this.v.toLowerCase()) !== -1
+                }
+            }, {
+                key  : 'name',
+                name : 'Имя',
+                width: 150,
+                v    : '',
+                f    : function (el: ICrmStatistic) {
+                    return el.name && String(el.name).toLowerCase().indexOf(this.v.toLowerCase()) !== -1
+                }
+            }, {
+                key  : 'contract',
+                name : '№ договора',
+                width: 100,
+                v    : '',
+                f    : function (el: ICrmStatistic) {
+                    return el.contract && String(el.contract).toLowerCase().indexOf(this.v.toLowerCase()) !== -1
+                }
+            }, {
+                key  : 'implement_date',
+                name : 'Выполнение',
+                width: 150,
+                v    : null,
+                f    : function (el: ICrmStatistic) {
+                    return el.implement_date === this.v
+                }
+            }
+        ]
+
+
+        @CrnStatistic.State public table!: ICrmStatistic
+        @CrnStatistic.Action public fetchTable!: () => void
+        @CrnStatistic.Action('updateRow') public updateRow_CrmStatistic!: (payload: ICrmStatistic) => void
+        @CrnStatistic.Mutation('unshiftRow') public unshiftRowCrnStatistic!: (payload: ICrmStatistic) => void
+        @CrnStatistic.Mutation public addUpdatedTableRow!: (payload: ICrmStatistic) => void
+        // table -> edit row
+        @CrnStatistic.State('row') public row!: ICrmStatistic
+
+        /** {@link  CrmStatistic.initTableRow} */
+        @CrnStatistic.Mutation public initTableRow!: (payload: ICrmStatistic) => void
+         /** {@link CrmStatistic.updateRow } */
+        @CrnStatistic.Action('updateRow') public  updateRowCrmStatistic!: (payload: ICrmStatistic) => void
+         /** {@link CrmStatistic.fetchRow } */
+        @CrnStatistic.Action('fetchRow') public  fetchRow_CrmStatistic!: (payload: ICrmStatistic) => void
+
+    // table -> methods
+        public blender(arr: any, filters: any) {
+            return arr.filter(function (el: any) {
+                return filters.every(function (filter: any) {
+                    return filter.f(el)
+                })
+            })
+        }
+        public filterData() {
+            return this.blender(this.table, this.tableHead.filter((obj) => obj.v));
+        }
+
+// eof table
+// customer
+        @Customer.Mutation('setRow') public setRowCustomer!: (payload: ICustomer) => void
+
+
+
+// eof customer
+
+
+        // @CrnStatistic.State
+        // private period!: object
+        // get user() {
+        //     return this.$store.state.Helper.helper
+        // }
+        @Helper.State private helper: any;
+
+// METHODS
+        public statusDesign(id:number) {
+            let cl = '';
+            switch (id) {
+                case 7:
+                    cl = 'row_green';
+                    break;
+                case 5:
+                    cl = 'row_red';
+                    break;
+                case 10:
+                    cl = 'row_red';
+                    break;
+                case 2:
+                    cl = 'row_yellow';
+                    break;
+                case 1:
+                    cl = 'row_grey';
+                    break;
+                case 3:
+                    cl = 'row_grey';
+                    break;
+                case 4:
+                    cl = 'row_grey';
+                    break;
+                default:
+                    cl = 'row_default';
+            }
+            return cl;
+        }
+
+        public async attachCustomer(customer: ICustomer) {
+            this.row.customer_id = await customer.id
+            this.row.customer = await customer
+            await this.addUpdatedTableRow(this.row)
+            // @ts-ignore
+            this.$Message['success']('Клиент прикреплен')
+        }
+
+        created() {
+// statistic events
+                (window as any).Echo.join('statistic')
+                // @ts-ignore
+                .here(users => {
+                    // @ts-ignore
+                    this.users = users;
+                })
+                // @ts-ignore
+                .joining(user => {
+                    // @ts-ignore
+                    this.users.push(user);
+                })
+                // @ts-ignore
+                .leaving(user => {
+                    // @ts-ignore
+                    this.users = this.users.filter(u => u.id !== user.id);
+                })
+                // @ts-ignore
+                .listenForWhisper('typing', ({id, name}) => {
+                    // @ts-ignore
+                    this.users.forEach((user, index) => {
+                        if (user.id === id) {
+                            user.typing = true;
+                            // @ts-ignore
+                            this.$set(this.users, index, user);
+                        }
+                    });
+                })
+                // @ts-ignore
+                .listen('StatisticEvent', (event) => {
+                    console.log('event', event);
+                    switch (event.result.action) {
+
+                        // case 'update':
+                        //     this.edit.clonedRow = event.result.row;
+                        //     this.$store.commit('LID_STATISTICS_UPDATE', event.result.row)
+                        //     break;
+                        case 'create':
+                            this.unshiftRowCrnStatistic(event.result.row)
+
+                            // this.$store.commit('LID_STATISTICS_CREATE', event.result.row)
+                            break;
+                        case 'update':
+                            this.addUpdatedTableRow(event.result.row)
+                            break;
+                        // case 'open':
+                        //     this.edit.clonedRow = event.result.row;
+                        //     this.$store.commit('LID_STATISTICS_UPDATE', event.result.row)
+                        //     break;
+                        // case 'close':
+                        //     this.edit.clonedRow = event.result.row;
+                        //     this.$store.commit('LID_STATISTICS_UPDATE', event.result.row)
+                        //     break;
+                        // case 'order':
+                        //     this.edit.clonedRow = event.result.row;
+                        //     this.$store.commit('LID_STATISTICS_UPDATE', event.result.row)
+                        //     this.$store.commit('LID_STATISTICS_REORDER')
+                        //     break;
+                        // case 'createLid':
+                        //     this.edit.clonedRow = event.result.row;
+                        //     this.$store.commit('LID_STATISTICS_UPDATE', event.result.row)
+                        //     break;
+
+                    }
+
+                });
+
+
+            (window as any).Echo.join('customer').listen('Customer', (event: any) => {
+
+                switch (event.result.action) {
+                    case 'update':
+                        this.attachCustomer(event.result.data)
+                        bus.$emit('customerAddModal', false)
+                        break;
+                    case 'create':
+                        this.attachCustomer(event.result.data)
+                        bus.$emit('customerAddModal', false)
+                        break;
+                }
+                });
+
+
+            (window as any).Echo.join('lid').listen('Lid', (event: any) => {
+                console.log('from echo lid',event);
+                let eLidData: ILid = event.result.data
+                switch (event.result.action) {
+                    // case 'update':
+                    //     this.attachCustomer(event.result.data)
+                    //     bus.$emit('customerAddModal', false)
+                    //     break;
+                    case 'create': // создан ЛИД
+                        this.updateRowCrmStatistic({
+                            id: this.row.id,
+                            lid_id: eLidData.id
+                        })
+                        bus.$emit('contractNrConfirmModal', false)
+                        bus.$emit('customerSearch',[])
+                        // @ts-ignore
+                        this.$Message['success']('Создан лид')
+                }
+            });
+/*crmStatistic*/
+            (window as any).Echo.join('crmStatistic').listen('CrmStatistic', (event: any) => {
+                console.log('from echo crmStatistic',event);
+                switch (event.result.action) {
+                    case 'create':
+                        this.unshiftRowCrnStatistic(event.result.data)
+                        break;
+                    case 'update':
+                        this.addUpdatedTableRow(event.result.data)
+                        // bus.$emit('customerAddModal', false)
+                        break;
+
+                }
+            });
+
+/*Act*/
+            (window as any).Echo.join('act').listen('Act', (event: any) => {
+                console.log('from echo Act',event);
+                switch (event.result.action) {
+                    case 'create':
+
+                        // this.unshiftRowCrnStatistic(event.result.data)
+                        break;
+                    case 'create_with_volumes':
+                        if(event.result.data){
+                            console.log(event.result.data);
+                            this.updateRow_CrmStatistic({ // addUpdatedTableRow_crmStatistic
+                                id: event.result.data.statistic_id,
+                                act_id : event.result.data.id,
+                                call_status: 7
+                            })
+                        } else {
+                            // @ts-ignore
+                            this.$Message['error']('Ошибка создания акта')
+                        }
+
+                        break;
+                    case 'update':
+                        // this.addUpdatedTableRow(event.result.data)
+                        // bus.$emit('customerAddModal', false)
+                        break;
+                }
+            });
+            /*Implement*/
+            (window as any).Echo.join('implement').listen('Implement', (event: any) => {
+                console.log('from echo Implement',event);
+                switch (event.result.action) {
+                    case 'create':
+                        // this.unshiftRowCrnStatistic(event.result.data)
+                        break;
+
+                    case 'update':
+                        // this.addUpdatedTableRow(event.result.data)
+                        // bus.$emit('customerAddModal', false)
+                        break;
+                }
+            });
+/*Volume*/
+            (window as any).Echo.join('volume').listen('Volume', (event: any) => {
+                console.log('from echo Volume',event);
+                switch (event.result.action) {
+                    case 'create':
+                        this.fetchRow_CrmStatistic({id: event.result.data.statistic_id})
+                        break;
+                    case 'update':
+                        this.fetchRow_CrmStatistic({id: event.result.data.statistic_id})
+                        break;
+                    case 'delete':
+                        if(event.result.data){
+                            this.fetchRow_CrmStatistic({id: event.result.data.statistic_id})
+                        } else {
+                            // @ts-ignore
+                            this.$Message['error']('Ошибка удаления задачи')
+                        }
+                        break;
+                }
+            });
+
+            this.fetchTable()
+
+        }
+
+
+    }
+</script>
+

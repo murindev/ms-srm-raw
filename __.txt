@@ -1,0 +1,53 @@
+ lid_statistics -> customer -> remove
+
+
+
+
+S
+    table
+    row
+    search
+    searchField
+    searchRow
+
+M
+    unshiftRow -> unshift(row)
+    updateRow -> replace row
+
+eM
+    addUpdatedTableRow -> table row + row
+
+A
+    fetchSearchRow -> search
+    fetchRow -> addUpdatedTableRow
+    fetchUpdateRow -> updateRow
+
+eA
+    eCreateRow () void  -> event -> unshiftRow
+    eUpdateRow () void  -> event -> addUpdatedTableRow
+    eDeleteRow () void  -> event -> addUpdatedTableRow
+
+
+
+
+/*
+ * index
+ *  //base
+ * columns()
+ * create()
+ * read()
+ * get()
+ * update()
+ * delete()
+ * // functional
+ *
+ *
+ *
+ *
+ *
+ * */
+
+//////////////////////////////////////////////////////////////////////////
+
+UPDATE lid_statistics SET `call_status` = REPLACE(call_status,8,6)
+UPDATE lid_statistics SET `call_status` = REPLACE(call_status,9,2)
