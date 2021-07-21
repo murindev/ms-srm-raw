@@ -13,10 +13,12 @@ use DemeterChain\C;
 class CustomerVuex extends Controller
 {
     private $data;
+    private $page;
     private $logic;
 
     public function index(){
         $this->data = \request()->get('data') ? \request()->get('data') : '' ;
+        $this->page = \request()->get('page') ? \request()->get('page') : null ;
         $this->logic = \request()->get('logic') ? \request()->get('logic') : '' ;
         return call_user_func_array([__CLASS__,\request()->get('func')],[$this->data]);
     }
@@ -48,9 +50,10 @@ class CustomerVuex extends Controller
     private function create(){
         return Customer::create($this->data);
     }
-    private function read() {
+    public function read() {
         return Customer::where($this->data['field'], $this->data['value'])->get();
     }
+
     private function get(){
         return Customer::where('id', $this->data['id'])->first();
     }
@@ -66,6 +69,8 @@ class CustomerVuex extends Controller
     }
 
     // eof base
+
+
 
 
 
@@ -94,6 +99,13 @@ class CustomerVuex extends Controller
             'logic' => $this->logic,
             'data' => $this->create()
         ]);
+    }
+
+    // bx24
+
+
+    public function bxGetClients(){
+        return Customer::paginate(10,['*'], 'page', $this->page);
     }
 
 }

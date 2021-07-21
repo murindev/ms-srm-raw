@@ -13,7 +13,7 @@ use Spatie\QueryBuilder\QueryBuilder;
 
 class LidController extends Controller
 {
-    private $relations = ['client','act'];
+    private $relations = ['client','act','volumes'];
     public $model;
 
     public function row($value){
@@ -70,6 +70,26 @@ class LidController extends Controller
             });
         });
     }
+
+    public function customer_inn($value){
+        $this->model->where(function ($query) use ($value) {
+            $query->whereHas('client', function ($q) use ($value){
+                $q->where('inn','like','%'.$value.'%');
+            });
+        });
+    }
+
+
+    public function volumes($value){
+
+        $vol = \App\Models\Crm\Volume::where('pest',$value)
+            ->where('lid_id','!=',null)
+            ->select('lid_id')
+            ->get()->pluck('lid_id');
+
+        $this->model->whereIn('id',$vol);
+    }
+
     public function balance($value){
         $this->model->where(function ($query) use ($value) {
             $query->where('balance',$value < 0 ? '<=' : '>=',$value);

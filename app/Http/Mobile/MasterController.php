@@ -82,13 +82,13 @@ class MasterController extends Controller
         ActExecution::whereActId($implement->parent)->update(['contract' => $file->getClientOriginalName(),'step' => 4]);
     }
 
-
     public function onRecordSave(){
         $file = request()->file('file');
         $file->move(public_path() . "/storage/audit/record/", $file->getClientOriginalName());
         $implement = $this->byID(request()->get('implement_id'));
         ActExecution::whereActId($implement->parent)->update(['record_file' => $file->getClientOriginalName()]);
     }
+
     public function onStepFinished(){
         try {
             ActExecution::where('act_id', request()->get('act_id'))->update(['finished' => now(),'step' => 5]);
@@ -110,7 +110,7 @@ class MasterController extends Controller
 
 
 
-    // helper functions
+    // helper functionsimplementsList
 
     public $with = ['act.execution','act.auditPhotos', 'act.volumesMobile.squareEntityRow', 'act.volumesMobile.pestRow'];
 

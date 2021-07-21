@@ -31,13 +31,6 @@ class MailController extends Controller
             'output' => $output,
             'data' => $data,
         ];
-//        return Mail::create([
-//            'site' => $data->site,
-//            'to' => ,
-//            'html' => ,
-//            'data' =>
-//        ]);
-
     }
     public function commercialSesteam(){
         $output = $this->curlInit('https://sesteam.ru/mail/letters',[

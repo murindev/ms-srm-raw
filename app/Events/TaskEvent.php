@@ -40,6 +40,5 @@ class TaskEvent implements ShouldBroadcastNow
     public function broadcastOn()
     {
         return new PresenceChannel('task');
-//        return new PresenceChannel('chat.'.$this->to);
     }
 }

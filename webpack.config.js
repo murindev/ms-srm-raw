@@ -17,6 +17,7 @@ const WEBPACK_CONFIG = {
     entry: {
         'crm.statistic': './resources/ts/crm.statistic.ts',
         'crm.lid.list': './resources/ts/crm.lid.list.ts',
+        'crm.lid': './resources/ts/crm.lid.ts',
         'crm.funnel.personal': './resources/ts/crm.funnel.personal.ts',
         'app': './resources/js/app.js',
     },

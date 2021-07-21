@@ -133,6 +133,15 @@ class Lid extends Model
     public function volumes(){
         return $this->hasMany(Volume::class,'lid_id');
     }
+
+    function vol(){
+        return $this->hasMany(Volume::class,'lid_id')->where('pest',14);
+    }
+    /*        $model->where(function ($query){
+                $query->whereHas('volumes', function ($q){
+                    $q->where('pest',14)->limit(1);
+                });
+            });*/
     public function implements(){
         return $this->hasMany(Implement::class,'lid_id');
     }

@@ -31,7 +31,9 @@ class VerifyCsrfToken extends Middleware
         '/ts2',
         '/mobile-master',
         '/mobile-master-photo',
+        '/vuex/customer',
 //        '/display/logistic_map',
+
 
     ];
 }

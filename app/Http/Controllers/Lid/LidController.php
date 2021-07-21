@@ -93,15 +93,11 @@ class LidController extends Controller
     public function listSettingsCreate(){
 
     }
-    public function listSettingsRead(){}
 
-    public function listSettingsUpdate(){ }
-    public function listSettingsDelete(){ }
 
     public function getList(){
         return Lid::orderBy('id','DESC')->get();
     }
-
 
     public function readCustomers(){
         $customer = Customer::all();

@@ -93,9 +93,10 @@
         }
 
         created() {
-
+            console.log('crmStatistic');
             /*crmStatistic*/
             (window as any).Echo.join('crmStatistic').listen('CrmStatistic', (event: any) => {
+                console.log('crmStatistic');
 
                 switch (event.result.action) {
                     case 'create':

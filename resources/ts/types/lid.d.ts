@@ -1,6 +1,7 @@
 import {IAct} from "./act";
 import {IFinance} from "./finance";
 import {ICustomer} from "./customer";
+import {IVolume} from "./volume";
 
 export interface ILid {
     id?: number,
@@ -47,6 +48,7 @@ export interface ILid {
     exp_cash?: number,
     exp_cashless?: number,
 
+    volumes?: IVolume[],
     volumes_total?: number,
     volumes_cash?: number,
     volumes_cashless?: number,

@@ -71,16 +71,9 @@ class ImplementController extends Controller
         return Implement::where('id',$this->id)->delete();
     }
 
-
-
-
-
     public function get(){
         return Implement::where('id',$this->id)->first();
     }
-
-
-
 
 
     public function byDate(){

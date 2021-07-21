@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" promptOnRemoteOverwrite="CHECK_CONTENT" serverName="b.rosses.ru" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" serverName="bx">
     <serverData>
       <paths name="0010150.ru">
         <serverdata>
@@ -29,21 +29,24 @@
       <paths name="b.rosses.ru">
         <serverdata>
           <mappings>
-            <mapping deploy="/" local="$PROJECT_DIR$" web="/" />
+            <mapping local="$PROJECT_DIR$" web="/" />
+            <mapping local="$PROJECT_DIR$/public/ts" web="/" />
           </mappings>
         </serverdata>
       </paths>
       <paths name="bx">
         <serverdata>
           <mappings>
-            <mapping local="$PROJECT_DIR$" web="crm" />
+            <mapping local="$PROJECT_DIR$" web="/" />
+            <mapping local="$PROJECT_DIR$/public/ts" web="/" />
           </mappings>
         </serverdata>
       </paths>
       <paths name="c.sesteam.ru">
         <serverdata>
           <mappings>
-            <mapping deploy="/" local="$PROJECT_DIR$" web="/" />
+            <mapping local="$PROJECT_DIR$" web="/" />
+            <mapping local="$PROJECT_DIR$/public/ts" web="/" />
           </mappings>
         </serverdata>
       </paths>
@@ -55,7 +58,23 @@
           </mappings>
         </serverdata>
       </paths>
+      <paths name="cripto">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+            <mapping local="$PROJECT_DIR$/public/ts" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="crm_backup">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+            <mapping local="$PROJECT_DIR$/public/ts" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="crypto-hostinger">
         <serverdata>
           <mappings>
             <mapping local="$PROJECT_DIR$" web="/" />
@@ -106,11 +125,9 @@
       <paths name="mse-crm24.ru">
         <serverdata>
           <mappings>
-            <mapping deploy="/" local="$PROJECT_DIR$" web="/" />
+            <mapping local="$PROJECT_DIR$" web="/" />
+            <mapping local="$PROJECT_DIR$/public/ts" web="/" />
           </mappings>
-          <excludedPaths>
-            <excludedPath path="/node_modules" />
-          </excludedPaths>
         </serverdata>
       </paths>
       <paths name="mse.bx.crm">
@@ -250,14 +267,6 @@
         </serverdata>
       </paths>
       <paths name="vivini_serv">
-        <serverdata>
-          <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
-            <mapping local="$PROJECT_DIR$/public/ts" web="/" />
-          </mappings>
-        </serverdata>
-      </paths>
-      <paths name="vivino_dev">
         <serverdata>
           <mappings>
             <mapping local="$PROJECT_DIR$" web="/" />

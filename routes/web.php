@@ -12,9 +12,9 @@
 */
 
 
-//Artisan::call('view:clear');
+Artisan::call('view:clear');
 
-
+use App\Models\Crm\Lid;
 
 Route::prefix('vuex')->group(function () {
     Route::any('/customer', '\App\Http\Vuex\CustomerVuex@index');
@@ -24,7 +24,6 @@ Route::prefix('vuex')->group(function () {
     Route::any('/volume', '\App\Http\Vuex\VolumeVuex@index');
     Route::any('/implement', '\App\Http\Vuex\ImplementVuex@index');
     Route::any('/finance', '\App\Http\Vuex\FinanceVuex@index');
-//    Route::any('/funnel', '\App\Http\Vuex\FunnelVuex@index');
     Route::any('/funnel', '\App\Http\Controllers\Statistics\StatisticCall@index');
     Route::any('/statistic-finance', '\App\Http\Controllers\Statistics\StatisticFinance@index');
 });
@@ -64,7 +63,6 @@ Route::any('/customer/async', '\App\Http\Controllers\Customer\CustomerController
 Route::any('/lid/async', '\App\Http\Controllers\Lid\LidController@async');
 Route::any('/act/async', '\App\Http\Controllers\Act\ActController@async');
 Route::any('/log/async', '\App\Http\Controllers\Log\LogController@async');
-//Route::any('/customer/async','\App\Http\Controllers\Customer\CustomerController@async');
 Route::any('/volume/async', '\App\Http\Controllers\Volume\VolumeController@async');
 Route::any('/implement/async', 'Implement\ImplementController@async');
 Route::any('/map/async', '\App\Http\Controllers\Logistic\MapController@async');
@@ -104,14 +102,13 @@ Route::any('/settings/async', '\App\Http\Controllers\SettingsController@async');
 //Route::get('/messages', '\App\Http\Controllers\Chat\ChatController@fetchMessages');
 Route::post('/messages', '\App\Http\Controllers\Chat\ChatController@sendMessage');
 Route::post('/messenger/async', '\App\Http\Controllers\Chat\ChatController@async');
-// EOF messemger
-/////
+
+// schedule
+
 Route::get('/schedule/master', '\App\Http\Controllers\Ajax\LogisticController@printMasterSchedule');
 
 Route::get('/print/schedule', '\App\Http\Controllers\Printer\PrinterController@printSchedule');
 
-
-///
 
 
 // MOBILE
@@ -186,18 +183,11 @@ Route::get('/ajax/price/remove_remedy', '\App\Admin\Controllers\Helper\PestContr
 
 // rules
 
-
 Route::any('/logistic/map/rules', '\App\Http\Controllers\Rules\RulesController@async');
 Route::any('/async/act', '\App\Http\Controllers\Act\ActController@async');
 
-
-
 Route::any('/mobile-master', '\App\Http\Mobile\MasterController@index');
 //Route::any('/mobile-master-photo', '\App\Http\Mobile\ImageAuditPhotoController@uploadImageContent');
-
-
-
-
 
 Route::any('/tratra', '\App\Http\Controllers\Statistics\StatisticCall@index');
 Route::any('/ooo', '\App\Http\Controllers\Statistics\StatisticFinance@test');

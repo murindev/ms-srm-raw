@@ -140,7 +140,25 @@
                 key: 'client.organization', type:'text', name: 'Организация', short: 'О', width: 150, v: null, d: null, colspan: 1, show: true, q:'&filter', alt:'customer_organization',class: 'customer-thead',
                 text: (obj:ILid) => obj.client?.organization || obj.client?.organization_long,
 
-            },{
+            },
+
+            {
+                key: 'client.inn', type:'text', name: 'ИНН', short: 'ИНН', width: 70, v: null, d: null, colspan: 1, show: true, q:'&filter',
+                alt:'customer_inn',class: 'customer-thead', text: (obj:ILid) => obj.client?.inn,
+            },
+
+
+            {
+                key: 'volumes', type:'select', name: 'Сущность', short: 'С', width: 150, v: null, d: null, colspan: 1, show: true, q:'&filter',class: 'warn-head',
+                list: this.h.pests_asc,
+                text: (obj:ILid) => {
+                    let d:any = obj.volumes?.map(i => i.pest).map(i => this.h.pests_asc.find(f => f.id === i)?.name)
+                    return this.array_unique(d).join('<br>')
+                }
+            },
+
+
+            {
                 key: 'date_from', type:'type', name: 'date_from', short: 'Д', width: 150, v: null, d: null, colspan: 1, show: false, q:'&filter'
             },{
                 key: 'date_to', type:'type', name: 'date_to', short: 'Д', width: 150, v: null, d: null, colspan: 1, show: false, q:'&filter'
@@ -248,6 +266,15 @@
 
         // table
         // table.cols
+
+        array_unique(inArr:any[]){
+            let uniHash={}, outArr=[], i=inArr.length;
+            // @ts-ignore
+            while(i--) uniHash[inArr[i]]=i;
+            // @ts-ignore
+            for(i in uniHash) outArr.push(i);
+            return outArr
+        }
 
 
         valuesView(obj:ILid,key: string){

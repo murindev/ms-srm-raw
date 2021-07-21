@@ -162,7 +162,7 @@ class UserController extends Controller
 
         $form->text('username', trans('admin.username'))->rules($userNameRules);
         $form->mobile('phone', 'Телефон')->options(['mask' => '8 (999) 999 99 99']);
-        $form->switch('active','Активность');
+        $form->number('active','Активность');
         $form->text('name', trans('admin.name'))->rules('required');
         $form->color('color','цвет');
         $form->color('text_color','цвет текста')->default('#ffffff');

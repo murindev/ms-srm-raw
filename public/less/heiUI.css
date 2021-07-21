@@ -9019,4 +9019,7 @@ textarea {
   padding: 3px 8px;
   border-radius: 2px;
 }
+.warn-head {
+  background: orangered;
+}
 /*# sourceMappingURL=heiUI.css.map */

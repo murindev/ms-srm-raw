@@ -110,7 +110,7 @@ class Dadata extends Controller
      */
     public function osm()
     {
-        $flat = \request()->get('flat');
+/*        $flat = \request()->get('flat');
         $flon = \request()->get('flon');
 
         $region = $this->getRegion(\request()->get('region'));
@@ -129,32 +129,35 @@ class Dadata extends Controller
         }
         $u = 'http://www.yournavigation.org/api/1.0/gosmore.php?flat=' . $flat . '&flon=' . $flon . '&tlat=' . $tlat . '&tlon=' . $tlon . '&format=geojson';
 
-        return file_get_contents($u);
+        return file_get_contents($u);*/
+        return false;
     }
 
     public function osmMoscow()
     {
-        $flat = \request()->get('flat');
+/*        $flat = \request()->get('flat');
         $flon = \request()->get('flon');
         $tlat = \request()->get('tlat');
         $tlon = \request()->get('tlon');
 
         $u = 'http://www.yournavigation.org/api/1.0/gosmore.php?flat=' . $flat . '&flon=' . $flon . '&tlat=' . $tlat . '&tlon=' . $tlon . '&format=geojson';
 
-        return file_get_contents($u);
+        return file_get_contents($u);*/
+        return [];
     }
 
 
     public function osmRoutes()
     {
-        $flat = \request()->get('flat');
+/*        $flat = \request()->get('flat');
         $flon = \request()->get('flon');
         $tlat = \request()->get('tlat');
         $tlon = \request()->get('tlon');
 
         $u = 'http://www.yournavigation.org/api/1.0/gosmore.php?flat=' . $flat . '&flon=' . $flon . '&tlat=' . $tlat . '&tlon=' . $tlon . '&format=geojson';
 
-        return file_get_contents($u);
+        return file_get_contents($u);*/
+        return [];
     }
 
     public function getRegion($reg)

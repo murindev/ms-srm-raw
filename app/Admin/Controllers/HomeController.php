@@ -14,6 +14,11 @@ class HomeController extends Controller
     {
         return $content
             ->header('Dashboard')
+            ->row(function (Row $row) {
+                $row->column(12, function (Column $column) {
+                    $column->append(phpinfo());
+                });
+            });
 //            ->description('Description...')
 //            ->row(Dashboard::title())
 //            ->row(function (Row $row) {

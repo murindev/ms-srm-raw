@@ -3,9 +3,16 @@
   <component name="WebServers">
     <option name="servers">
       <webServer id="7c291fb5-b681-4c3c-9dc0-fe5e65a2cd9a" name="b.rosses.ru" url="http://92.53.118.144">
-        <fileTransfer rootFolder="/home/s/sesteam/b.rosses.ru" accessType="SFTP" host="92.53.118.144" port="22" sshConfigId="7f9ca309-8419-48ca-8d88-bfe2f3c2c24d" sshConfig="sesteam.tmweb.ru">
+        <fileTransfer rootFolder="/home/s/sesteam/b.rosses.ru" accessType="SFTP" host="92.53.116.158" port="22" sshConfigId="7f9ca309-8419-48ca-8d88-bfe2f3c2c24d" sshConfig="sesteam.tmweb.ru">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" passiveMode="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+      <webServer id="72b49e58-417d-428a-b0f4-0b1b33c9b454" name="ruVDS">
+        <fileTransfer rootFolder="/var/www/dev.loc" accessType="SFTP" host="45.141.100.134" port="22" sshConfigId="24ad6ebd-3cdb-4cad-9868-f25216ae51e2" sshConfig="ruVds">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
           </advancedOptions>
         </fileTransfer>
       </webServer>
